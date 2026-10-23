@@ -40,8 +40,8 @@ label{display:block;margin:6px 0 2px;font-size:12px;color:var(--mut)}dialog inpu
 .ckc{width:34px;text-align:center}td.n{white-space:nowrap;text-align:right}th.n{text-align:right}
 @media(max-width:600px){#list td,#list th{padding:5px 4px}.th{width:30px;height:30px}#list .ch{font-size:10px;padding:1px 6px}}
 </style></head><body>
-<header><div class="row" style="margin:0"><h1>✨ Mi Inventario</h1><button class="tab" data-i="casa">🏠 Casa</button><button class="tab" data-i="des">🥫 Despensa</button></div>
-<div class="row"><input id="q" type="search" placeholder="Buscar (nombre, año, fecha…)"><button id="ft">🔎 Filtros<span id="fn"></span></button><button class="p" id="new">＋ Nuevo</button></div></header>
+<header><div class="row" style="margin:0"><h1>✨ Mi Inventario</h1><button class="tab" data-i="casa">🏠 Casa</button><button class="tab" data-i="des">🥫 Despensa</button><button class="tab" data-i="bot">🩹 Botiquín</button></div>
+<div class="row"><input id="q" type="search" placeholder="Buscar (nombre, año, fecha…)"><button id="ft">🔎 Filtros<span id="fn"></span></button><button class="p" id="new">＋ Nuevo</button></div><div class="row" id="acts"><button id="vw">☰ Lista</button><button id="sc">📷 Escanear</button><button id="lm">📍 Ubicaciones</button><button id="cm">🏷 Categorías</button><button id="sl">☑ Seleccionar</button><button id="imp">⬇ Importar</button><button id="exp">⬆ Exportar</button></div></header>
 <div id="tools"><div class="fp" id="flt">
 <div><label>📍 Ubicación (escribe para buscar)</label><input id="loc" type="search" list="locs" autocomplete="off" placeholder="Todas"></div>
 <div><label>🏷 Categoría (escribe para buscar)</label><input id="cat" type="search" list="cats" autocomplete="off" placeholder="Todas"></div>
@@ -51,7 +51,7 @@ label{display:block;margin:6px 0 2px;font-size:12px;color:var(--mut)}dialog inpu
 <div style="flex:2 1 360px;min-width:300px"><label>📅 Fecha (año, mes/año o día/mes/año)</label><div class="dr"><select id="df"></select><input id="d1" inputmode="numeric" placeholder="desde 2022" autocomplete="off"><input id="d2" inputmode="numeric" placeholder="hasta 03/2024" autocomplete="off"></div></div>
 <div class="pan"><label style="display:flex;align-items:center;gap:6px;color:var(--fg)"><input type="checkbox" id="rp" style="width:auto"> 🛒 a reponer</label></div>
 <div><button id="fc">✖ Limpiar todo</button></div></div>
-<div class="row" id="acts"><button id="vw">☰ Lista</button><button id="sc">📷 Escanear</button><button id="lm">📍 Ubicaciones</button><button id="cm">🏷 Categorías</button><button id="sl">☑ Seleccionar</button><button id="imp">⬇ Importar</button><button id="exp">⬆ Exportar</button></div></div>
+</div>
 <div id="st"></div><div id="grid"></div><div id="list" hidden></div><div id="pr"></div>
 <input type="file" id="fi" multiple hidden accept=".csv,.json,.zip,.xlsx">
 <dialog id="xd"><b>Exportar</b><p style="font-size:13px;color:var(--mut)">Excel, PDF y CSV llevan lo que ves ahora en pantalla (filtros incluidos).</p>
@@ -75,7 +75,7 @@ label{display:block;margin:6px 0 2px;font-size:12px;color:var(--mut)}dialog inpu
 <datalist id="cats"></datalist>
 <dialog id="md"><b>⬇ Importar tabla (Excel o CSV)</b><p id="md-i" style="font-size:13px;color:var(--mut)"></p>
 <div id="md-s"><label>Hoja del Excel</label><select id="md-sh"></select></div>
-<label>Añadir a</label><select id="md-t"><option value="casa">🏠 Casa</option><option value="des">🥫 Despensa</option></select>
+<label>Añadir a</label><select id="md-t"><option value="casa">🏠 Casa</option><option value="des">🥫 Despensa</option><option value="bot">🩹 Botiquín</option></select>
 <p style="font-size:12px;color:var(--mut);margin:8px 0 2px">Para cada dato elige qué columna de tu tabla lo contiene (ya he propuesto las que coinciden). No hace falta que tenga todas.</p>
 <div id="md-m" style="max-height:34vh;overflow:auto"></div>
 <label style="display:flex;gap:6px;align-items:center;color:var(--fg);font-size:13px"><input type="checkbox" id="md-c" checked style="width:auto"> Completar los datos vacíos de los que ya existen</label>
@@ -92,7 +92,7 @@ label{display:block;margin:6px 0 2px;font-size:12px;color:var(--mut)}dialog inpu
 const $=s=>document.querySelector(s),xd=$('#xd');
 const FIELDS=['name','location','brand','model','category','code','qty','min','unit','price','date','exp','ret','retWhy','tags','notes'];
 const HEAD={name:'Nombre',location:'Ubicación',brand:'Marca',model:'Modelo',category:'Categoría',code:'Código de barras',qty:'Cantidad',min:'Cant. mínima',unit:'Unidad',price:'Precio',date:'Fecha compra',exp:'Caducidad',ret:'Fecha retirada',retWhy:'Motivo retirada',tags:'Etiquetas',notes:'Notas'};
-const EMO={casa:'📦',des:'🥫'};const SEP=' › ',paths=l=>{const p=(l||'').split(SEP),o=[];if(!l)return o;for(let k=1;k<=p.length;k++)o.push(p.slice(0,k).join(SEP));return o},inLoc=(a,b)=>a==b||(a||'').startsWith(b+SEP),tl=s=>(s||'').split(',').map(x=>x.trim()).filter(Boolean),fixLoc=v=>(v||'').split(/\s*[›>]\s*/).filter(Boolean).join(SEP),remap=(l,m)=>{const k=Object.keys(m).filter(k=>l==k||l.startsWith(k+SEP)).sort((a,b)=>b.length-a.length)[0];return k===undefined?l:fixLoc(m[k]+l.slice(k.length))};let XC=[],selOn=false;const S=new Set();let items=[],db,cur=null,inv='casa',view='grid',shown=[];
+const EMO={casa:'📦',des:'🥫',bot:'🩹'};const SEP=' › ',paths=l=>{const p=(l||'').split(SEP),o=[];if(!l)return o;for(let k=1;k<=p.length;k++)o.push(p.slice(0,k).join(SEP));return o},inLoc=(a,b)=>a==b||(a||'').startsWith(b+SEP),tl=s=>(s||'').split(',').map(x=>x.trim()).filter(Boolean),fixLoc=v=>(v||'').split(/\s*[›>]\s*/).filter(Boolean).join(SEP),remap=(l,m)=>{const k=Object.keys(m).filter(k=>l==k||l.startsWith(k+SEP)).sort((a,b)=>b.length-a.length)[0];return k===undefined?l:fixLoc(m[k]+l.slice(k.length))};let XC=[],selOn=false;const S=new Set();let items=[],db,cur=null,inv='casa',view='grid',shown=[];
 const flash=m=>{st(m);$('#st').dataset.k=1;setTimeout(()=>{delete $('#st').dataset.k;render()},6000)};
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6),st=m=>$('#st').textContent=m;
 const h=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -100,13 +100,13 @@ const open=()=>new Promise((r,j)=>{const q=indexedDB.open('inv',1);q.onupgradene
 const tx=(s,m,f)=>new Promise((r,j)=>{const t=db.transaction(s,m),o=f(t.objectStore(s));t.oncomplete=()=>r(o&&o.result);t.onerror=j});
 const putI=i=>tx('items','readwrite',s=>s.put(i)),getP=id=>tx('photos','readonly',s=>s.get(id)),putP=(id,b)=>tx('photos','readwrite',s=>s.put(b,id)),delP=id=>tx('photos','readwrite',s=>s.delete(id));
 const norm=s=>(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
-const key=i=>(i.inv||'casa')+'|'+norm(i.name)+'|'+norm(i.location)+((i.inv||'casa')=='des'?'|'+(i.exp||''):''),invOf=i=>i.inv||'casa';
+const key=i=>(i.inv||'casa')+'|'+norm(i.name)+'|'+norm(i.location)+((i.inv||'casa')!='casa'?'|'+(i.exp||''):''),invOf=i=>i.inv||'casa';
 async function shrink(file){const b=await createImageBitmap(file),k=Math.min(1,1000/Math.max(b.width,b.height)),c=document.createElement('canvas');c.width=b.width*k;c.height=b.height*k;c.getContext('2d').drawImage(b,0,0,c.width,c.height);return new Promise(r=>c.toBlob(r,'image/jpeg',.82))}
 // ---- CSV
 function csv(t){const r=[];let row=[],f='',q=false;t=t.replace(/^\uFEFF/,'');for(let i=0;i<t.length;i++){const c=t[i];if(q){if(c=='"'){if(t[i+1]=='"'){f+='"';i++}else q=false}else f+=c}else if(c=='"')q=true;else if(c==','){row.push(f);f=''}else if(c=='\n'||c=='\r'){if(c=='\r'&&t[i+1]=='\n')i++;row.push(f);f='';r.push(row);row=[]}else f+=c}if(f||row.length){row.push(f);r.push(row)}const hd=r.shift().map(x=>x.trim());return r.filter(x=>x.length>1).map(x=>Object.fromEntries(hd.map((k,i)=>[k,(x[i]??'').trim()])))}
 const esc=v=>{v=v==null?'':String(v);return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
 const toCsv=(rows,cols)=>'\uFEFF'+[cols.join(','),...rows.map(r=>cols.map(k=>esc(r[k])).join(','))].join('\r\n');
-const AL={name:['name','nombre','producto','titulo','title','articulo','item'],location:['location','ubicacion','lugar','zona','almacenaje','almacen','donde','en donde','sitio','localizacion'],brand:['brand','marca'],model:['model','modelo'],category:['category','categoria','categorias','tipo'],qty:['quantity','qty','cantidad','unidades','stock'],unit:['unit','unidad'],code:['barcode','codigo de barras','codigo','ean','upc'],min:['cantidad minima','minimo','minima','stock minimo','min'],price:['price','precio','purchase price','valor','value'],date:['purchase date','fecha de compra','fecha compra','comprado el','comprado','fecha de adquisicion','adquirido','fecha','date'],exp:['expiry','expiration','expiration date','expiry date','caducidad','fecha de caducidad','vencimiento','best before','consumir antes de'],ret:['fecha de retirada','fecha retirada','retirada','fecha de baja','baja'],retWhy:['motivo de retirada','motivo retirada','motivo','motivo de baja'],tags:['tags','etiquetas','user tags'],notes:['notes','notas','nota','description','descripcion','comentarios','comentario','observaciones','observacion']};
+const AL={name:['name','nombre','producto','titulo','title','articulo','item','nombre del producto'],location:['location','ubicacion','lugar','zona','almacenaje','almacen','donde','en donde','sitio','localizacion'],brand:['brand','marca','laboratorio'],model:['model','modelo','formato'],category:['category','categoria','categorias','tipo'],qty:['quantity','qty','cantidad','unidades','stock','dosis quedan'],unit:['unit','unidad'],code:['barcode','codigo de barras','codigo','ean','upc','codigo barras'],min:['cantidad minima','minimo','minima','stock minimo','min'],price:['price','precio','purchase price','valor','value'],date:['purchase date','fecha de compra','fecha compra','comprado el','comprado','fecha de adquisicion','adquirido','fecha','date'],exp:['expiry','expiration','expiration date','expiry date','caducidad','fecha de caducidad','fecha caducidad','vencimiento','best before','consumir antes de'],ret:['fecha de retirada','fecha retirada','retirada','fecha de baja','baja'],retWhy:['motivo de retirada','motivo retirada','motivo','motivo de baja'],tags:['tags','etiquetas','user tags'],notes:['notes','notas','nota','description','descripcion','comentarios','comentario','observaciones','observacion']};
 function fromCsv(rows){const hd=Object.keys(rows[0]||{}),out=[];
  if(hd.includes('parent space title')){const tg=hd.slice(7,17);for(const r of rows){if(r.type!='ITEM')continue;const t=[...(r.tags||'').split(','),...tg.filter(k=>r[k]=='Y').map(k=>k.trim())].map(x=>x.trim()).filter(Boolean);
   out.push({name:r.title,location:r['parent space title'],qty:r.quantity?Math.round(r.quantity):1,price:+r.value>0?r.value:'',date:r['important date'],notes:r.notes,tags:[...new Set(t)].join(', ')})}}
@@ -171,7 +171,7 @@ async function readXlsx(buf,sel=0){const z=await unzip(buf),dec=new TextDecoder(
 // ---- Importar / sincronizar
 const touch=i=>{i.upd=Date.now();return i};
 async function merge(list,tg=inv,fill=true){const q1=n=>n.qty===''||n.qty==null?1:(+n.qty||0);
- if(tg=='des'){const g=new Map();for(const n of list){const k=[norm(n.name),norm(n.location),n.exp||''].join('|');if(g.has(k)){const a=g.get(k);a.qty=(+a.qty||0)+q1(n)}else g.set(k,{...n,qty:q1(n)})}list=[...g.values()]}
+ if(tg!='casa'){const g=new Map();for(const n of list){const k=[norm(n.name),norm(n.location),n.exp||''].join('|');if(g.has(k)){const a=g.get(k);a.qty=(+a.qty||0)+q1(n)}else g.set(k,{...n,qty:q1(n)})}list=[...g.values()]}
  const idx=new Map(items.filter(i=>!i.del).map(i=>[key(i),i]));let add=0,mer=0,dup=0;
  for(const n of list){if(!n.name)continue;n.inv=tg;const k=key(n),o=idx.get(k);
   if(o){let ch=0;if(fill)for(const f of FIELDS){if(f=='tags'){const t=[...new Set([...(o.tags||'').split(','),...(n.tags||'').split(',')].map(x=>x.trim()).filter(Boolean))].join(', ');if(t!=(o.tags||'')){o.tags=t;ch=1}}else if(!o[f]&&n[f]){o[f]=n[f];ch=1}}if(ch){await putI(touch(o));mer++}else dup++}
@@ -182,7 +182,8 @@ const MF=['name','location','category','brand','model','qty','price','date','not
 const num=v=>{v=String(v??'').replace(/[^\d,.\-]/g,'');if(!v)return null;v=v.includes(',')&&v.includes('.')?v.replace(/\./g,'').replace(',','.'):v.replace(',','.');const n=parseFloat(v);return isFinite(n)?n:null};
 const isoD=v=>{v=String(v||'').trim();if(!v)return '';let m,y,mo,d;
  if(m=/^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(v)){y=m[1];mo=+m[2];d=+m[3]}
- else if(m=/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2}|\d{4})/.exec(v)){y=m[3].length==2?'20'+m[3]:m[3];mo=+m[2];d=+m[1]}
+ else if(m=/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4}|\d{2})/.exec(v)){y=m[3].length==2?'20'+m[3]:m[3];mo=+m[2];d=+m[1]}
+ else if(/^\d{6}$/.test(v)){const y=+v.slice(0,4),mo=+v.slice(4,6);return mo>=1&&mo<=12?`${y}-${p2(mo)}-${p2(new Date(y,mo,0).getDate())}`:''}
  else if(/^\d{5}$/.test(v)&&+v>20000&&+v<80000)return new Date(Math.round((+v-25569)*864e5)).toISOString().slice(0,10);
  else return '';
  return mo<1||mo>12||d<1||d>31?'':`${y}-${p2(mo)}-${p2(d)}`};
@@ -227,8 +228,8 @@ async function exportZip(){st('Preparando copia…');const files=[],enc=new Text
  files.push({n:'items.json',d:enc.encode(JSON.stringify(items))},{n:'items.csv',d:enc.encode(toCsv(live,['id','inv',...FIELDS]))});
  for(const i of live){if(!i.ph)continue;const b=await getP(i.id);if(b)files.push({n:`photos/${i.id}.jpg`,d:new Uint8Array(await b.arrayBuffer())})}
  dl(zip(files),`inventario-${stampF()}.zip`);st(`Exportados ${live.length} artículos y ${files.length-2} fotos`)}
-const invName=()=>inv=='des'?'Despensa':'Casa';
-async function exportPdf(){st('Preparando PDF…');const pan=inv=='des',es=$('#es').value,rows=[];
+const invName=()=>({casa:'Casa',des:'Despensa',bot:'Botiquín'})[inv];
+async function exportPdf(){st('Preparando PDF…');const pan=inv!='casa',es=$('#es').value,rows=[];
  for(const r of shown){let u='';if(r.ph){const b=await getP(r.id);if(b)u=await new Promise(o=>{const f=new FileReader();f.onload=()=>o(f.result);f.readAsDataURL(b)})}rows.push([r,u])}
  const tot=shown.filter(r=>!isRet(r)).reduce((s,r)=>s+(+r.price||0),0),
   H=['Foto','Nombre','Ubicación','Categoría',...(pan?['Cant.','Caducidad']:[]),'Fecha compra','Precio',...(es?['Retirada · motivo']:[])],
@@ -287,18 +288,22 @@ const dfmt=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s||'');return m?`${m[3]}/
 const money=p=>{const n=parseFloat(p);return p===''||p==null||!isFinite(n)?'':n.toFixed(2).replace('.',',')+' €'};
 const isRet=i=>!!(i.ret||i.retWhy);
 const vms=m=>m>1.4e12&&m<4e12?m:0,creMs=i=>vms(i.cre||(typeof i.id=='string'&&/^[0-9a-z]{12}$/.test(i.id)&&isNaN(+i.id)?parseInt(i.id.slice(0,8),36):0));
-const SOL={az:'Nombre',cre:'Fecha de alta',upd:'Última modificación',date:'Fecha de compra',price:'Precio',exp:'Caducidad'},
+const SOL={az:'Nombre',location:'Ubicación',category:'Categoría',brand:'Marca',qty:'Cantidad',cre:'Fecha de alta',upd:'Última modificación',date:'Fecha de compra',price:'Precio',exp:'Caducidad'},
  DFO=[['date','Compra'],['cre','Alta'],['upd','Modificación'],['ret','Retirada'],['exp','Caducidad']],
- NAT={az:1,exp:1,cre:-1,upd:-1,date:-1,price:-1},
- SV={cre:i=>creMs(i)||(+i.id||0),upd:i=>i.upd||0,date:i=>i.date||null,price:i=>{const n=parseFloat(i.price);return isFinite(n)&&n>0?n:null},exp:i=>i.exp||null},
+ NAT={az:1,location:1,category:1,brand:1,tags:1,qty:1,exp:1,ret:-1,cre:-1,upd:-1,date:-1,price:-1},
+ SV={qty:i=>+i.qty||0,ret:i=>i.ret||null,cre:i=>creMs(i)||(+i.id||0),upd:i=>i.upd||0,date:i=>i.date||null,price:i=>{const n=parseFloat(i.price);return isFinite(n)&&n>0?n:null},exp:i=>i.exp||null},
  DG={date:i=>i.date||'',cre:i=>msISO(creMs(i)),upd:i=>msISO(i.upd),ret:i=>i.ret||'',exp:i=>i.exp||''},
  MES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-let srt={casa:{k:'az',d:0},des:{k:'exp',d:0}},BUILT='',DL={};
+let srt={casa:{k:'az',d:0},des:{k:'exp',d:0},bot:{k:'exp',d:0}},BUILT='',DL={};
 const saveUI=()=>putP('_ui',JSON.stringify({view,srt})).catch(()=>{});
-const dirLabel=s=>s.k=='az'?(s.d?'Z → A':'A → Z'):s.k=='exp'?(s.d?'Más lejana primero':'Más próxima primero'):s.k=='price'?(s.d?'Más barato primero':'Más caro primero'):(s.d?'Más antiguo primero':'Más reciente primero');
+const TXK={az:1,location:1,category:1,brand:1,tags:1};
+const dirLabel=s=>{const up=NAT[s.k]*(s.d?-1:1)>0;return TXK[s.k]?(up?'A → Z':'Z → A'):s.k=='exp'?(up?'Más próxima primero':'Más lejana primero'):s.k=='price'?(up?'Más barato primero':'Más caro primero'):s.k=='qty'?(up?'Menos primero':'Más primero'):(up?'Más antiguo primero':'Más reciente primero')};
+const TX={az:i=>i.name,location:i=>i.location,category:i=>i.category,brand:i=>i.brand,tags:i=>i.tags};
 function sorter(){const{k,d}=srt[inv],sg=NAT[k]*(d?-1:1);
- return(a,b)=>{if(k!='az'){const x=SV[k](a),y=SV[k](b);if(x==null&&y==null){}else if(x==null)return 1;else if(y==null)return -1;else if(x!=y)return(x<y?-1:1)*sg}
-  const c=a.name.localeCompare(b.name,'es');return k=='az'?c*sg:c}}
+ return(a,b)=>{if(TX[k]){const c=String(TX[k](a)||'').localeCompare(String(TX[k](b)||''),'es',{numeric:true});return (c||a.name.localeCompare(b.name,'es'))*sg}
+  const x=SV[k]?SV[k](a):null,y=SV[k]?SV[k](b):null;
+  if(x==null&&y==null)return a.name.localeCompare(b.name,'es');if(x==null)return 1;if(y==null)return -1;
+  return x!=y?(x<y?-1:1)*sg:a.name.localeCompare(b.name,'es')}}
 // fecha parcial -> límite ISO comparable ("2022" -> 2022-01-01 / 2022-12-31; "03/2024"; "15/03/2024")
 const parseD=(s,end)=>{s=String(s||'').trim();if(!s)return '';let m,y,mo,d;
  if(m=/^(\d{4})$/.exec(s))return end?`${m[1]}-12-31`:`${m[1]}-01-01`;
@@ -313,10 +318,10 @@ function qParse(raw){let s=raw.trim();const r=/^(\d{4})\s*(?:-|–|a|al|hasta)\s
  const m=/^([a-záéíóú]{3,})\.?\s+(?:de\s+)?(\d{4})$/i.exec(s);if(m){const k=MES.indexOf(norm(m[1]).slice(0,3));if(k>=0)s=p2(k+1)+' '+m[2]}
  return{q:norm(s)}}
 const hay=i=>norm([i.name,i.brand,i.model,i.category,i.location,i.tags,i.notes,i.code,i.retWhy,i.date,dfmt(i.date),i.exp,dfmt(i.exp),i.ret,dfmt(i.ret)].join(' '));
-function render(){const pan=inv=='des';
+function render(){const pan=inv!='casa';
  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.i==inv));updBar();
  document.querySelectorAll('.pan').forEach(e=>e.hidden=!pan);
- if(BUILT!=inv){BUILT=inv;$('#so').innerHTML=Object.keys(SOL).filter(k=>k!='exp'||pan).map(k=>`<option value="${k}">${SOL[k]}</option>`).join('');
+ if(BUILT!=inv){BUILT=inv;$('#so').innerHTML=Object.keys(SOL).filter(k=>(k!='exp'&&k!='qty')||pan).map(k=>`<option value="${k}">${SOL[k]}</option>`).join('');
   const dv=$('#df').value,ds=DFO.filter(x=>x[0]!='exp'||pan);$('#df').innerHTML=ds.map(x=>`<option value="${x[0]}">${x[1]}</option>`).join('');$('#df').value=ds.some(x=>x[0]==dv)?dv:'date'}
  const sv=srt[inv];$('#so').value=sv.k;$('#sdir').textContent='↕ '+dirLabel(sv);
  const mine=items.filter(i=>!i.del&&invOf(i)==inv),act=mine.filter(i=>!isRet(i)),
@@ -342,13 +347,14 @@ function render(){const pan=inv=='des';
  if(view=='grid')for(const i of shown){const c=document.createElement('div'),meta=[dfmt(i.date),money(i.price)].filter(Boolean).join(' · ');c.className='card'+(S.has(i.id)?' sel':'')+(isRet(i)?' rt':'');
   c.innerHTML=(selOn?`<span class="ck">${cb(i)}</span>`:'')+`<div class="im">${EMO[inv]}</div><div class="t"><b>${h(i.name)}</b>${chip(i.location)}${pan?badge(i)+' '+qtyT(i):''}${isRet(i)?'<span class="b x">Retirado</span>':''}${meta?`<div class="m">${h(meta)}</div>`:''}</div>`;
   c.onclick=()=>pick(i,c);g.append(c);if(i.ph){const im=c.querySelector('.im');im._i=i;io.observe(im)}}
- else{const k=sv.k,CL=[{t:'Nombre',f:i=>h(i.name)+(isRet(i)?' <span class="b x">Retirado</span>':'')},{t:'Ubicación',f:i=>chip(i.location)},{t:'Categoría',c:'hm',f:i=>h(i.category)},
-   ...(pan?[{t:'Cant.',f:qtyT},{t:'Estado',f:badge}]:[{t:'Marca',c:'hm',f:i=>h(i.brand)}]),
-   {t:'Fecha compra',c:'hm n',f:i=>h(dfmt(i.date))},{t:'Precio',c:'n',f:i=>money(i.price)},
-   ...(k=='cre'||k=='upd'?[{t:k=='cre'?'Alta':'Modificado',c:'hm n',f:i=>h(dfmt(DG[k](i)))}]:[]),
-   ...(es?[{t:'Retirada · motivo',f:i=>h([dfmt(i.ret),i.retWhy].filter(Boolean).join(' · '))}]:[]),
-   ...(!pan?[{t:'Etiquetas',c:'hm',f:i=>h(i.tags)}]:[])];
-  const t=document.createElement('table');t.innerHTML=`<tr>${selOn?'<th class="ckc"><input type="checkbox" id="ckall"></th>':''}<th></th>${CL.map(c=>`<th class="${c.c||''}">${c.t}</th>`).join('')}</tr>`;
+ else{const k=sv.k,up=NAT[k]*(sv.d?-1:1)>0,ar=c=>c.k&&c.k==k?(up?' ▲':' ▼'):'',CL=[{t:'Nombre',k:'az',f:i=>h(i.name)+(isRet(i)?' <span class="b x">Retirado</span>':'')},{t:'Ubicación',k:'location',f:i=>chip(i.location)},{t:'Categoría',k:'category',c:'hm',f:i=>h(i.category)},
+   ...(pan?[{t:'Cant.',k:'qty',f:qtyT},{t:'Caducidad',k:'exp',f:badge}]:[{t:'Marca',k:'brand',c:'hm',f:i=>h(i.brand)}]),
+   {t:'Fecha compra',k:'date',c:'hm n',f:i=>h(dfmt(i.date))},{t:'Precio',k:'price',c:'n',f:i=>money(i.price)},
+   {t:'Alta',k:'cre',c:'hm n',f:i=>h(dfmt(msISO(creMs(i))))},{t:'Modificado',k:'upd',c:'hm n',f:i=>h(dfmt(msISO(i.upd)))},
+   ...(es?[{t:'Retirada · motivo',k:'ret',f:i=>h([dfmt(i.ret),i.retWhy].filter(Boolean).join(' · '))}]:[]),
+   ...(!pan?[{t:'Etiquetas',k:'tags',c:'hm',f:i=>h(i.tags)}]:[])];
+  const t=document.createElement('table');t.innerHTML=`<tr>${selOn?'<th class="ckc"><input type="checkbox" id="ckall"></th>':''}<th></th>${CL.map(c=>`<th class="${c.c||''}"${c.k?` data-k="${c.k}"`:''} style="cursor:pointer;white-space:nowrap">${c.t}${ar(c)}</th>`).join('')}</tr>`;
+  t.querySelectorAll('th[data-k]').forEach(th=>th.onclick=()=>{const q=th.dataset.k;if(srt[inv].k==q)srt[inv].d^=1;else srt[inv]={k:q,d:0};saveUI();render()});
   for(const i of shown){const r=t.insertRow();r.className='r'+(S.has(i.id)?' sel':'')+(isRet(i)?' rt':'');
    r.innerHTML=(selOn?`<td class="ckc">${cb(i)}</td>`:'')+`<td><div class="th">${i.ph?'':EMO[inv]}</div></td>`+CL.map(c=>`<td class="${c.c||''}">${c.f(i)}</td>`).join('');
    r.onclick=()=>pick(i,r);if(i.ph){const th=r.querySelector('.th');th._i=i;io.observe(th)}}
