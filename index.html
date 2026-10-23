@@ -40,7 +40,7 @@ label{display:block;margin:6px 0 2px;font-size:12px;color:var(--mut)}dialog inpu
 .ckc{width:34px;text-align:center}td.n{white-space:nowrap;text-align:right}th.n{text-align:right}
 @media(max-width:600px){#list td,#list th{padding:5px 4px}.th{width:30px;height:30px}#list .ch{font-size:10px;padding:1px 6px}}
 </style></head><body>
-<header><div class="row" style="margin:0"><h1>✨ Mi Inventario</h1><button class="tab" data-i="casa">🏠 Casa</button><button class="tab" data-i="des">🥫 Despensa</button><button class="tab" data-i="bot">🏥 Botiquín</button></div>
+<header><div class="row" style="margin:0"><h1>✨ Mi Inventario</h1><button class="tab" data-i="casa">🏠 Casa</button><button class="tab" data-i="des">🥫 Despensa</button><button class="tab" data-i="bot"><svg viewBox="0 0 24 24" style="width:1.1em;height:1.1em;vertical-align:-0.2em"><rect width="24" height="24" rx="5" fill="#e53935"/><path d="M9.5 4h5v5.5H20v5h-5.5V20h-5v-5.5H4v-5h5.5z" fill="#fff"/></svg> Botiquín</button></div>
 <div class="row"><input id="q" type="search" placeholder="Buscar (nombre, año, fecha…)"><button id="ft">🔎 Filtros<span id="fn"></span></button><button class="p" id="new">＋ Nuevo</button></div><div class="row" id="acts"><button id="vw">☰ Lista</button><button id="sc">📷 Escanear</button><button id="lm">📍 Ubicaciones</button><button id="cm">🏷 Categorías</button><button id="sl">☑ Seleccionar</button><button id="imp">⬇ Importar</button><button id="exp">⬆ Exportar</button></div></header>
 <div id="tools"><div class="fp" id="flt">
 <div><label>🔎 Buscar en</label><select id="sa"><option value="">Este inventario</option><option value="all">Todos los inventarios</option></select></div>
@@ -229,7 +229,7 @@ async function exportZip(){st('Preparando copia…');const files=[],enc=new Text
  files.push({n:'items.json',d:enc.encode(JSON.stringify(items))},{n:'items.csv',d:enc.encode(toCsv(live,['id','inv',...FIELDS]))});
  for(const i of live){if(!i.ph)continue;const b=await getP(i.id);if(b)files.push({n:`photos/${i.id}.jpg`,d:new Uint8Array(await b.arrayBuffer())})}
  dl(zip(files),`inventario-${stampF()}.zip`);st(`Exportados ${live.length} artículos y ${files.length-2} fotos`)}
-const invN=v=>({casa:'Casa',des:'Despensa',bot:'Botiquín'})[v];const invName=()=>$('#sa').value=='all'?'Todos':invN(inv);
+const invN=v=>({casa:'Casa',des:'Despensa',bot:'Botiquín'})[v];const invName=()=>($('#sa').value=='all'||$('#q').value.trim())?'Todos':invN(inv);
 async function exportPdf(){st('Preparando PDF…');const pan=inv!='casa',es=$('#es').value,rows=[];
  for(const r of shown){let u='';if(r.ph){const b=await getP(r.id);if(b)u=await new Promise(o=>{const f=new FileReader();f.onload=()=>o(f.result);f.readAsDataURL(b)})}rows.push([r,u])}
  const tot=shown.filter(r=>!isRet(r)).reduce((s,r)=>s+(+r.price||0),0),
@@ -325,7 +325,7 @@ function render(){const pan=inv!='casa';
  if(BUILT!=inv){BUILT=inv;$('#so').innerHTML=Object.keys(SOL).filter(k=>(k!='exp'&&k!='qty')||pan).map(k=>`<option value="${k}">${SOL[k]}</option>`).join('');
   const dv=$('#df').value,ds=DFO.filter(x=>x[0]!='exp'||pan);$('#df').innerHTML=ds.map(x=>`<option value="${x[0]}">${x[1]}</option>`).join('');$('#df').value=ds.some(x=>x[0]==dv)?dv:'date'}
  const sv=srt[inv];$('#so').value=sv.k;$('#sdir').textContent='↕ '+dirLabel(sv);
- const ALL=$('#sa').value=='all',mine=items.filter(i=>!i.del&&(ALL||invOf(i)==inv)),act=mine.filter(i=>!isRet(i)),
+ const ALL=$('#sa').value=='all'||!!$('#q').value.trim(),mine=items.filter(i=>!i.del&&(ALL||invOf(i)==inv)),act=mine.filter(i=>!isRet(i)),
   locs=[...new Set(mine.flatMap(i=>paths(i.location)))].sort((a,b)=>a.localeCompare(b,'es')),
   cats=[...new Set([...mine.map(i=>i.category).filter(Boolean),...XC])].sort((a,b)=>a.localeCompare(b,'es'));
  const d1=locs.map(x=>`<option value="${h(x)}">`).join(''),d2=cats.map(x=>`<option value="${h(x)}">`).join('');
