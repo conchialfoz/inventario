@@ -40,9 +40,10 @@ label{display:block;margin:6px 0 2px;font-size:12px;color:var(--mut)}dialog inpu
 .ckc{width:34px;text-align:center}td.n{white-space:nowrap;text-align:right}th.n{text-align:right}
 @media(max-width:600px){#list td,#list th{padding:5px 4px}.th{width:30px;height:30px}#list .ch{font-size:10px;padding:1px 6px}}
 </style></head><body>
-<header><div class="row" style="margin:0"><h1>✨ Mi Inventario</h1><button class="tab" data-i="casa">🏠 Casa</button><button class="tab" data-i="des">🥫 Despensa</button><button class="tab" data-i="bot">🩹 Botiquín</button></div>
+<header><div class="row" style="margin:0"><h1>✨ Mi Inventario</h1><button class="tab" data-i="casa">🏠 Casa</button><button class="tab" data-i="des">🥫 Despensa</button><button class="tab" data-i="bot">🏥 Botiquín</button></div>
 <div class="row"><input id="q" type="search" placeholder="Buscar (nombre, año, fecha…)"><button id="ft">🔎 Filtros<span id="fn"></span></button><button class="p" id="new">＋ Nuevo</button></div><div class="row" id="acts"><button id="vw">☰ Lista</button><button id="sc">📷 Escanear</button><button id="lm">📍 Ubicaciones</button><button id="cm">🏷 Categorías</button><button id="sl">☑ Seleccionar</button><button id="imp">⬇ Importar</button><button id="exp">⬆ Exportar</button></div></header>
 <div id="tools"><div class="fp" id="flt">
+<div><label>🔎 Buscar en</label><select id="sa"><option value="">Este inventario</option><option value="all">Todos los inventarios</option></select></div>
 <div><label>📍 Ubicación (escribe para buscar)</label><input id="loc" type="search" list="locs" autocomplete="off" placeholder="Todas"></div>
 <div><label>🏷 Categoría (escribe para buscar)</label><input id="cat" type="search" list="cats" autocomplete="off" placeholder="Todas"></div>
 <div><label>📷 Foto</label><select id="pf"><option value="">Todos</option><option value="con">Solo con foto</option><option value="sin">Solo sin foto</option></select></div>
@@ -75,7 +76,7 @@ label{display:block;margin:6px 0 2px;font-size:12px;color:var(--mut)}dialog inpu
 <datalist id="cats"></datalist>
 <dialog id="md"><b>⬇ Importar tabla (Excel o CSV)</b><p id="md-i" style="font-size:13px;color:var(--mut)"></p>
 <div id="md-s"><label>Hoja del Excel</label><select id="md-sh"></select></div>
-<label>Añadir a</label><select id="md-t"><option value="casa">🏠 Casa</option><option value="des">🥫 Despensa</option><option value="bot">🩹 Botiquín</option></select>
+<label>Añadir a</label><select id="md-t"><option value="casa">🏠 Casa</option><option value="des">🥫 Despensa</option><option value="bot">🏥 Botiquín</option></select>
 <p style="font-size:12px;color:var(--mut);margin:8px 0 2px">Para cada dato elige qué columna de tu tabla lo contiene (ya he propuesto las que coinciden). No hace falta que tenga todas.</p>
 <div id="md-m" style="max-height:34vh;overflow:auto"></div>
 <label style="display:flex;gap:6px;align-items:center;color:var(--fg);font-size:13px"><input type="checkbox" id="md-c" checked style="width:auto"> Completar los datos vacíos de los que ya existen</label>
@@ -92,7 +93,7 @@ label{display:block;margin:6px 0 2px;font-size:12px;color:var(--mut)}dialog inpu
 const $=s=>document.querySelector(s),xd=$('#xd');
 const FIELDS=['name','location','brand','model','category','code','qty','min','unit','price','date','exp','ret','retWhy','tags','notes'];
 const HEAD={name:'Nombre',location:'Ubicación',brand:'Marca',model:'Modelo',category:'Categoría',code:'Código de barras',qty:'Cantidad',min:'Cant. mínima',unit:'Unidad',price:'Precio',date:'Fecha compra',exp:'Caducidad',ret:'Fecha retirada',retWhy:'Motivo retirada',tags:'Etiquetas',notes:'Notas'};
-const EMO={casa:'📦',des:'🥫',bot:'🩹'};const SEP=' › ',paths=l=>{const p=(l||'').split(SEP),o=[];if(!l)return o;for(let k=1;k<=p.length;k++)o.push(p.slice(0,k).join(SEP));return o},inLoc=(a,b)=>a==b||(a||'').startsWith(b+SEP),tl=s=>(s||'').split(',').map(x=>x.trim()).filter(Boolean),fixLoc=v=>(v||'').split(/\s*[›>]\s*/).filter(Boolean).join(SEP),remap=(l,m)=>{const k=Object.keys(m).filter(k=>l==k||l.startsWith(k+SEP)).sort((a,b)=>b.length-a.length)[0];return k===undefined?l:fixLoc(m[k]+l.slice(k.length))};let XC=[],selOn=false;const S=new Set();let items=[],db,cur=null,inv='casa',view='grid',shown=[];
+const EMO={casa:'📦',des:'🥫',bot:'<svg viewBox="0 0 24 24" style="width:1.8em;height:1.8em;vertical-align:-0.35em"><rect width="24" height="24" rx="5" fill="#e53935"/><path d="M9.5 4h5v5.5H20v5h-5.5V20h-5v-5.5H4v-5h5.5z" fill="#fff"/></svg>'};const SEP=' › ',paths=l=>{const p=(l||'').split(SEP),o=[];if(!l)return o;for(let k=1;k<=p.length;k++)o.push(p.slice(0,k).join(SEP));return o},inLoc=(a,b)=>a==b||(a||'').startsWith(b+SEP),tl=s=>(s||'').split(',').map(x=>x.trim()).filter(Boolean),fixLoc=v=>(v||'').split(/\s*[›>]\s*/).filter(Boolean).join(SEP),remap=(l,m)=>{const k=Object.keys(m).filter(k=>l==k||l.startsWith(k+SEP)).sort((a,b)=>b.length-a.length)[0];return k===undefined?l:fixLoc(m[k]+l.slice(k.length))};let XC=[],selOn=false;const S=new Set();let items=[],db,cur=null,inv='casa',view='grid',shown=[];
 const flash=m=>{st(m);$('#st').dataset.k=1;setTimeout(()=>{delete $('#st').dataset.k;render()},6000)};
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6),st=m=>$('#st').textContent=m;
 const h=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -228,7 +229,7 @@ async function exportZip(){st('Preparando copia…');const files=[],enc=new Text
  files.push({n:'items.json',d:enc.encode(JSON.stringify(items))},{n:'items.csv',d:enc.encode(toCsv(live,['id','inv',...FIELDS]))});
  for(const i of live){if(!i.ph)continue;const b=await getP(i.id);if(b)files.push({n:`photos/${i.id}.jpg`,d:new Uint8Array(await b.arrayBuffer())})}
  dl(zip(files),`inventario-${stampF()}.zip`);st(`Exportados ${live.length} artículos y ${files.length-2} fotos`)}
-const invName=()=>({casa:'Casa',des:'Despensa',bot:'Botiquín'})[inv];
+const invN=v=>({casa:'Casa',des:'Despensa',bot:'Botiquín'})[v];const invName=()=>$('#sa').value=='all'?'Todos':invN(inv);
 async function exportPdf(){st('Preparando PDF…');const pan=inv!='casa',es=$('#es').value,rows=[];
  for(const r of shown){let u='';if(r.ph){const b=await getP(r.id);if(b)u=await new Promise(o=>{const f=new FileReader();f.onload=()=>o(f.result);f.readAsDataURL(b)})}rows.push([r,u])}
  const tot=shown.filter(r=>!isRet(r)).reduce((s,r)=>s+(+r.price||0),0),
@@ -324,7 +325,7 @@ function render(){const pan=inv!='casa';
  if(BUILT!=inv){BUILT=inv;$('#so').innerHTML=Object.keys(SOL).filter(k=>(k!='exp'&&k!='qty')||pan).map(k=>`<option value="${k}">${SOL[k]}</option>`).join('');
   const dv=$('#df').value,ds=DFO.filter(x=>x[0]!='exp'||pan);$('#df').innerHTML=ds.map(x=>`<option value="${x[0]}">${x[1]}</option>`).join('');$('#df').value=ds.some(x=>x[0]==dv)?dv:'date'}
  const sv=srt[inv];$('#so').value=sv.k;$('#sdir').textContent='↕ '+dirLabel(sv);
- const mine=items.filter(i=>!i.del&&invOf(i)==inv),act=mine.filter(i=>!isRet(i)),
+ const ALL=$('#sa').value=='all',mine=items.filter(i=>!i.del&&(ALL||invOf(i)==inv)),act=mine.filter(i=>!isRet(i)),
   locs=[...new Set(mine.flatMap(i=>paths(i.location)))].sort((a,b)=>a.localeCompare(b,'es')),
   cats=[...new Set([...mine.map(i=>i.category).filter(Boolean),...XC])].sort((a,b)=>a.localeCompare(b,'es'));
  const d1=locs.map(x=>`<option value="${h(x)}">`).join(''),d2=cats.map(x=>`<option value="${h(x)}">`).join('');
@@ -345,9 +346,9 @@ function render(){const pan=inv!='casa';
  const g=$('#grid'),ls=$('#list');g.hidden=view!='grid';ls.hidden=view!='list';g.innerHTML='';ls.innerHTML='';$('#vw').textContent=view=='grid'?'☰ Lista':'▦ Tarjetas';
  const cb=i=>`<input type="checkbox" class="ckb"${S.has(i.id)?' checked':''}>`;
  if(view=='grid')for(const i of shown){const c=document.createElement('div'),meta=[dfmt(i.date),money(i.price)].filter(Boolean).join(' · ');c.className='card'+(S.has(i.id)?' sel':'')+(isRet(i)?' rt':'');
-  c.innerHTML=(selOn?`<span class="ck">${cb(i)}</span>`:'')+`<div class="im">${EMO[inv]}</div><div class="t"><b>${h(i.name)}</b>${chip(i.location)}${pan?badge(i)+' '+qtyT(i):''}${isRet(i)?'<span class="b x">Retirado</span>':''}${meta?`<div class="m">${h(meta)}</div>`:''}</div>`;
+  c.innerHTML=(selOn?`<span class="ck">${cb(i)}</span>`:'')+`<div class="im">${EMO[invOf(i)]}</div><div class="t"><b>${h(i.name)}</b>${ALL?`<span class="ch" style="background:#7c4dff22">${EMO[invOf(i)]} ${invN(invOf(i))}</span>`:''}${chip(i.location)}${pan?badge(i)+' '+qtyT(i):''}${isRet(i)?'<span class="b x">Retirado</span>':''}${meta?`<div class="m">${h(meta)}</div>`:''}</div>`;
   c.onclick=()=>pick(i,c);g.append(c);if(i.ph){const im=c.querySelector('.im');im._i=i;io.observe(im)}}
- else{const k=sv.k,up=NAT[k]*(sv.d?-1:1)>0,ar=c=>c.k&&c.k==k?(up?' ▲':' ▼'):'',CL=[{t:'Nombre',k:'az',f:i=>h(i.name)+(isRet(i)?' <span class="b x">Retirado</span>':'')},{t:'Ubicación',k:'location',f:i=>chip(i.location)},{t:'Categoría',k:'category',c:'hm',f:i=>h(i.category)},
+ else{const k=sv.k,up=NAT[k]*(sv.d?-1:1)>0,ar=c=>c.k&&c.k==k?(up?' ▲':' ▼'):'',CL=[{t:'Nombre',k:'az',f:i=>h(i.name)+(isRet(i)?' <span class="b x">Retirado</span>':'')},...(ALL?[{t:'Inventario',f:i=>h(invN(invOf(i)))}]:[]),{t:'Ubicación',k:'location',f:i=>chip(i.location)},{t:'Categoría',k:'category',c:'hm',f:i=>h(i.category)},
    ...(pan?[{t:'Cant.',k:'qty',f:qtyT},{t:'Caducidad',k:'exp',f:badge}]:[{t:'Marca',k:'brand',c:'hm',f:i=>h(i.brand)}]),
    {t:'Fecha compra',k:'date',c:'hm n',f:i=>h(dfmt(i.date))},{t:'Precio',k:'price',c:'n',f:i=>money(i.price)},
    {t:'Alta',k:'cre',c:'hm n',f:i=>h(dfmt(msISO(creMs(i))))},{t:'Modificado',k:'upd',c:'hm n',f:i=>h(dfmt(msISO(i.upd)))},
@@ -356,7 +357,7 @@ function render(){const pan=inv!='casa';
   const t=document.createElement('table');t.innerHTML=`<tr>${selOn?'<th class="ckc"><input type="checkbox" id="ckall"></th>':''}<th></th>${CL.map(c=>`<th class="${c.c||''}"${c.k?` data-k="${c.k}"`:''} style="cursor:pointer;white-space:nowrap">${c.t}${ar(c)}</th>`).join('')}</tr>`;
   t.querySelectorAll('th[data-k]').forEach(th=>th.onclick=()=>{const q=th.dataset.k;if(srt[inv].k==q)srt[inv].d^=1;else srt[inv]={k:q,d:0};saveUI();render()});
   for(const i of shown){const r=t.insertRow();r.className='r'+(S.has(i.id)?' sel':'')+(isRet(i)?' rt':'');
-   r.innerHTML=(selOn?`<td class="ckc">${cb(i)}</td>`:'')+`<td><div class="th">${i.ph?'':EMO[inv]}</div></td>`+CL.map(c=>`<td class="${c.c||''}">${c.f(i)}</td>`).join('');
+   r.innerHTML=(selOn?`<td class="ckc">${cb(i)}</td>`:'')+`<td><div class="th">${i.ph?'':EMO[invOf(i)]}</div></td>`+CL.map(c=>`<td class="${c.c||''}">${c.f(i)}</td>`).join('');
    r.onclick=()=>pick(i,r);if(i.ph){const th=r.querySelector('.th');th._i=i;io.observe(th)}}
   const ca=t.querySelector('#ckall');if(ca){ca.checked=!!shown.length&&shown.every(i=>S.has(i.id));ca.onclick=e=>{e.stopPropagation();shown.forEach(i=>ca.checked?S.add(i.id):S.delete(i.id));render()}}
   ls.append(t)}
@@ -377,7 +378,7 @@ $('#x2').onclick=()=>{xd.close();const c=cols(shown);dl(xlsx(shown,c,invName()),
 $('#x3').onclick=()=>{xd.close();exportPdf()};
 $('#x4').onclick=()=>{xd.close();dl(new Blob([toCsv(shown,cols(shown))],{type:'text/csv'}),`${invName().toLowerCase()}-${stampF()}.csv`)};
 $('#fi').onchange=e=>{importFiles([...e.target.files]);e.target.value=''};
-['q','loc','cat','rp','pf','es','df','d1','d2'].forEach(k=>$('#'+k).oninput=render);
+['q','loc','cat','rp','pf','es','df','d1','d2','sa'].forEach(k=>$('#'+k).oninput=render);
 $('#pf').oninput=()=>{if($('#pf').value=='sin'&&view!='list'){view='list';saveUI()}render()};
 $('#so').oninput=()=>{srt[inv].k=$('#so').value;srt[inv].d=0;saveUI();render()};
 $('#sdir').onclick=()=>{srt[inv].d^=1;saveUI();render()};
