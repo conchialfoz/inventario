@@ -264,17 +264,33 @@ async function readBarcode(blob){const bm=await createImageBitmap(blob);
   let r=scanGray(g,W,H);if(r)return r;const t=new Uint8Array(W*H);for(let y=0;y<H;y++)for(let x=0;x<W;x++)t[x*H+y]=g[y*W+x];r=scanGray(t,H,W);if(r)return r}
  return null}
 // ---- Búsqueda online por código e IA (opcionales, necesitan internet)
-async function lookup(code){for(const hn of ['world.openfoodfacts.org','world.openproductsfacts.org','world.openbeautyfacts.org']){try{const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),6000),r=await fetch(`https://${hn}/api/v2/product/${code}.json?fields=product_name,product_name_es,brands,quantity,categories`,{signal:ctl.signal});clearTimeout(t);const j=await r.json(),p=j.product;
-  if(j.status==1&&p&&(p.product_name_es||p.product_name))return{name:p.product_name_es||p.product_name,brand:(p.brands||'').split(',')[0].trim(),notes:p.quantity||'',category:(p.categories||'').split(',')[0].trim()}}catch(e){}}return null}
+async function getJ(url){const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),7000);try{const r=await fetch(url,{signal:ctl.signal});if(!r.ok)return{err:'error '+r.status};return{j:await r.json()}}catch(e){return{err:e.name=='AbortError'?'tiempo agotado':'sin conexión o bloqueado por el navegador'}}finally{clearTimeout(t)}}
+async function lookup(code){const errs=[];
+ // 1) Alimentos y cosmética (Open Food Facts)
+ const x=await getJ(`https://world.openfoodfacts.org/api/v2/product/${code}.json?fields=product_name,product_name_es,brands,quantity,categories`);
+ if(x.err)errs.push('Open Food Facts: '+x.err);
+ else{const p=x.j.product;if(x.j.status==1&&p&&(p.product_name_es||p.product_name))return{d:{name:p.product_name_es||p.product_name,brand:(p.brands||'').split(',')[0].trim(),notes:p.quantity||'',category:(p.categories||'').split(',')[0].trim()},src:'Open Food Facts'}}
+ // 2) Medicamentos españoles (CIMA, AEMPS): el código nacional va dentro del EAN que empieza por 847
+ if(String(code).startsWith('847')){const c=await getJ(`https://cima.aemps.es/cima/rest/medicamentos?cn=${code.slice(3,9)}`);
+  if(c.err)errs.push('CIMA: '+c.err);
+  else{const r=(c.j.resultados||[])[0];if(r)return{d:{name:r.nombre,brand:r.labtitular||'',category:'Medicamentos',notes:r.pactivos||''},src:'CIMA (AEMPS)'}}}
+ // 3) Productos generales: ropa, herramientas, electrónica (UPCitemdb)
+ const u=await getJ(`https://api.upcitemdb.com/prod/trial/lookup?upc=${code}`);
+ if(u.err)errs.push('UPCitemdb: '+u.err);
+ else{const it=(u.j.items||[])[0];if(it)return{d:{name:it.title,brand:it.brand||'',category:it.category||'',notes:it.description||'',img:(it.images||[])[0]},src:'UPCitemdb'}}
+ return{d:null,errs}}
 const getCfg=async()=>{try{return JSON.parse(await getP('_cfg')||'{}')}catch(e){return{}}};
 async function aiDraft(blob){const c=await getCfg();if(!c.key)throw new Error('falta la clave API (⚙️ en Escanear)');const b=await shrink(blob),b64=await new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result.split(',')[1]);f.readAsDataURL(b)});
  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':c.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:c.model||'claude-haiku-5-5',max_tokens:500,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}},{type:'text',text:'Identifica el artículo de la foto para un inventario doméstico. Responde SOLO con un JSON, sin texto extra, con estas claves (cadena vacía si no se ve): name (nombre corto en español), brand, model, category, code (código de barras si se lee, solo dígitos), exp (caducidad AAAA-MM-DD si se ve), notes (descripción breve: color, material, tamaño, formato).'}]}]})});
  const j=await r.json();if(!r.ok)throw new Error(j.error?.message||r.status);return JSON.parse(j.content.map(x=>x.text||'').join('').match(/\{[\s\S]*\}/)[0])}
-async function completePend(){if(!navigator.onLine)return;let n=0;for(const i of items.filter(x=>x.pend&&!x.del&&x.code)){const d=await lookup(i.code);if(!d)continue;if(d.name)i.name=d.name;for(const f of['brand','model','category','notes'])if(!i[f]&&d[f])i[f]=d[f];i.pend=0;await putI(touch(i));n++}if(n){render();flash(n+' artículo(s) completados desde internet')}}
+async function completePend(){if(!navigator.onLine)return;let n=0;for(const i of items.filter(x=>x.pend&&!x.del&&x.code)){const d=(await lookup(i.code)).d;if(!d)continue;if(d.name)i.name=d.name;for(const f of['brand','model','category','notes'])if(!i[f]&&d[f])i[f]=d[f];i.pend=0;await putI(touch(i));n++}if(n){render();flash(n+' artículo(s) completados desde internet')}}
 async function handleCode(code){const m=$('#s-m');if(!code){m.textContent='Escribe un código.';return}
  const ex=items.find(i=>!i.del&&invOf(i)==inv&&i.code==code);if(ex){sd.close();edit(ex);flash('Ya lo tenías: ajusta la cantidad si hace falta');return}
- m.textContent='Buscando '+code+'…';const d=await lookup(code);if(!d&&!navigator.onLine){const it={id:uid(),inv,qty:1,code,name:'Código '+code,pend:1,cre:Date.now()};items.push(it);await putI(touch(it));sd.close();render();return flash('Sin conexión: guardado el código '+code+'. Se completará al volver internet')}sd.close();edit({id:null,inv,qty:1,code,...(d||{})});
- flash(d?'Datos encontrados: revisa y guarda':'Sin datos online (¿sin conexión?): rellena el nombre a mano')}
+ m.textContent='Buscando '+code+'…';const r=await lookup(code);const d=r.d;
+ if(!d&&!navigator.onLine){const it={id:uid(),inv,qty:1,code,name:'Código '+code,pend:1,cre:Date.now()};items.push(it);await putI(touch(it));sd.close();render();return flash('Sin conexión: guardado el código '+code+'. Se completará al volver internet')}
+ let pf=null;if(d&&d.img){try{const ir=await fetch(d.img);const bl=await ir.blob();if(bl.size)pf=bl}catch(e){}}
+ const{img,...dd}=d||{};sd.close();edit({id:null,inv,qty:1,code,...dd,_pf:pf});
+ flash(d?`Datos encontrados en ${r.src}: revisa y guarda`:'No encontrado. '+(r.errs.length?r.errs.join(' · '):'Ninguna base lo tiene: rellena a mano'))}
 // ---- Gestor de ubicaciones
 let undo=null;
 function lmOpen(){const mine=items.filter(i=>!i.del&&invOf(i)==inv&&i.location),c={};mine.forEach(i=>paths(i.location).forEach(p=>c[p]=(c[p]||0)+1));
