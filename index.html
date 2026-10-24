@@ -72,7 +72,7 @@ label{display:block;margin:6px 0 2px;font-size:12px;color:var(--mut)}dialog inpu
 <div class="gr"><div class="fi"><label>Retirada (si ya no lo tienes)</label><div class="fr"><input id="ret" type="date"><button type="button" id="rethoy">Hoy</button></div></div><div class="fi"><label>Motivo de retirada</label><input id="retWhy" list="rm" placeholder="Vendido, regalado, tirado…" autocomplete="off"><datalist id="rm"><option value="Vendido"><option value="Regalado"><option value="Donado"><option value="Tirado"><option value="Roto"><option value="Perdido"><option value="Consumido"><option value="Caducado"></datalist></div></div>
 <div class="fi"><label>Etiquetas (separadas por coma)</label><input id="tags"></div>
 <div class="fi"><label id="notesL">Notas</label><textarea id="notes" rows="2"></textarea></div>
-<div class="fbtn"><button type="button" id="del">Borrar</button><span><button type="button" id="cx">Cancelar</button> <button id="ok" value="ok" class="fok">Guardar</button></span></div>
+<div class="fbtn"><button type="button" id="del">Borrar</button><button type="button" id="dup" hidden>⧉ Duplicar</button><span><button type="button" id="cx">Cancelar</button> <button id="ok" value="ok" class="fok">Guardar</button></span></div>
 <div id="lb"><img id="lbi" alt=""></div></form></dialog>
 <dialog id="ld"><b>📍 Ubicaciones</b><p style="font-size:13px;color:var(--mut)">Escribe a la derecha el nombre nuevo (las que coincidan se fusionan). Los niveles se separan con ›, p. ej. «Dormitorio › Armario › Balda 1»; al renombrar «Dormitorio» se renombra todo lo que hay dentro. «Sugerir» propone agrupar, por ejemplo, «Balda 1 Puerta 3 Armario 1 Vestidor» en «Vestidor». <b>Haz antes una copia ZIP</b> por seguridad.</p>
 <label style="display:flex;gap:6px;align-items:center;color:var(--fg);font-size:13px"><input type="checkbox" id="ld-mv" checked style="width:auto"> Pasar el detalle (balda, cajón…) a la descripción</label>
@@ -397,7 +397,7 @@ function renderSum(mine,act){const pan=inv!='casa',sin=act.filter(i=>!i.ph).leng
  $('#rs').innerHTML=B('tot',act.length,'activos','var(--text-primary)')+B('sin',sin,'sin foto','var(--text-primary)')+B('loc',act.filter(i=>!i.location).length,'sin ubicación','var(--text-primary)')+(pan?B('exp',act.filter(exp30).length,'caducan en 30 días','#A32D2D')+B('rep',act.filter(rep).length,'a reponer','#854F0B'):'');
  $('#rs').querySelectorAll('button').forEach(b=>b.onclick=()=>{const q=b.dataset.q;QS=null;$('#pf').value='';$('#rp').checked=false;
   if(q=='tot'){$('#fc').click();return}if(q=='sin')$('#pf').value='sin';if(q=='exp')QS='exp30';if(q=='loc')QS='loc';if(q=='rep')$('#rp').checked=true;render()})}
-async function edit(i){cur=i||{id:null,qty:1};if(!cur.id)cur.id=uid();for(const f of FIELDS)$('#'+f).value=cur[f]??'';$('#ph').value='';$('#del').hidden=!(i&&i.id);$('#aim').textContent='';
+async function edit(i){cur=i||{id:null,qty:1};if(!cur.id)cur.id=uid();for(const f of FIELDS)$('#'+f).value=cur[f]??'';$('#ph').value='';$('#del').hidden=!(i&&i.id);$('#dup').hidden=!(i&&i.id);$('#aim').textContent='';
  $('#notesL').textContent=(cur.inv||inv)=='bot'?'Descripción (para qué es)':'Notas';
  PL=pks(cur).map(k=>({k,isNew:false}));PG=[];if(cur._pf){PL.push({k:cur.id+'_'+uid(),b:cur._pf,isNew:true});delete cur._pf}
  await drawPv();$('#dlg').showModal()}
@@ -409,6 +409,13 @@ async function drawPv(){const box=$('#pvs');box.innerHTML='';
  box.querySelectorAll('[data-x]').forEach(x=>x.onclick=()=>{const[p]=PL.splice(+x.dataset.x,1);if(!p.isNew)PG.push(p.k);drawPv()});
  $('#ph').disabled=PL.length>=3}
 $('#lb').onclick=()=>$('#lb').classList.remove('on');
+$('#dup').onclick=async()=>{const src=items.find(x=>x.id==cur.id);if(!src)return;
+ const copy={...src};for(const k of ['id','phs','ph','cre','upd','del','pend','ret','retWhy'])delete copy[k];
+ const bl=[];for(const k of pks(src)){const b=await getP(k);if(b)bl.push(b)}
+ await edit(copy);
+ for(const b of bl)PL.push({k:cur.id+'_'+uid(),b,isNew:true});
+ await drawPv();
+ $('#aim').textContent='Copia creada. Cambia lo que necesites (por ejemplo, la caducidad) y guarda';};
 const locSug=()=>{const q=norm($('#location').value);const all=[...new Set(items.filter(i=>!i.del&&invOf(i)==inv&&i.location).map(i=>i.location))];const m=all.filter(l=>norm(l)!=q&&(!q||norm(l).includes(q))).sort((a,b)=>a.localeCompare(b,'es')).slice(0,8);$('#locsug').innerHTML=m.map(l=>`<button type="button" class="sugb" data-l="${h(l)}">${h(l)}</button>`).join('');$('#locsug').querySelectorAll('button').forEach(b=>b.onclick=()=>{$('#location').value=b.dataset.l;$('#locsug').innerHTML=''})};
 $('#location').oninput=locSug;$('#location').onfocus=locSug;
 $('#ph').onchange=async e=>{for(const f of [...e.target.files]){if(PL.length>=3){flash('Máximo 3 fotos por artículo');break}PL.push({k:cur.id+'_'+uid(),b:await shrink(f),isNew:true})}e.target.value='';drawPv()};
