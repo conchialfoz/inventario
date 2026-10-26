@@ -42,19 +42,22 @@ label{display:block;margin:6px 0 2px;font-size:12px;color:var(--mut)}dialog inpu
 .ck input,td.ckc input,th.ckc input{width:22px;height:22px;margin:0;padding:0;accent-color:#7c4dff}
 .ckc{width:34px;text-align:center}td.n{white-space:nowrap;text-align:right}th.n{text-align:right}
 @media(max-width:600px){#list td,#list th{padding:5px 4px}.th{width:30px;height:30px}#list .ch{font-size:10px;padding:1px 6px}}
+header .tab{display:none!important}
+#dlg{max-height:92vh;overflow-y:auto}
+.ttl{font-size:20px!important;font-weight:700}
 </style></head><body>
 <header><div class="row" style="margin:0"><h1>✨ Mi Inventario</h1><button class="tab" data-i="casa">🏠 Casa</button><button class="tab" data-i="des"><svg class="cart" viewBox="0 0 64 64" style="width:1.9em;height:1.9em;vertical-align:middle"><path d="M4 12h8l6 28h30l5-20H16" fill="none" stroke="#534AB7" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/><rect x="18" y="20" width="10" height="10" rx="2" fill="#EF9F27"/><rect x="30" y="20" width="10" height="10" rx="2" fill="#E24B4A"/><rect x="42" y="20" width="8" height="10" rx="2" fill="#97C459"/><circle cx="22" cy="48" r="5" fill="#534AB7"/><circle cx="44" cy="48" r="5" fill="#534AB7"/></svg> Despensa</button><button class="tab" data-i="bot"><svg viewBox="0 0 24 24" style="width:1.1em;height:1.1em;vertical-align:-0.2em"><rect x="1" y="1" width="22" height="22" rx="5" fill="#fff" stroke="#e53935" stroke-width="2"/><path d="M9.5 4h5v5.5H20v5h-5.5V20h-5v-5.5H4v-5h5.5z" fill="#e53935"/></svg> Botiquín</button></div>
-<div class="row"><input id="q" type="search" placeholder="Buscar (nombre, año, fecha…)"><button id="ft">🔎 Filtros<span id="fn"></span></button><button class="p" id="new">＋ Nuevo</button></div><div class="row" id="acts"><button id="vw">☰ Lista</button><button id="sc">📷 Escanear</button><button id="sl">☑ Seleccionar</button><button id="mm">⋯ Más</button></div><div class="row" id="masr" hidden><button id="lm">📍 Ubicaciones</button><button id="cm">🏷 Categorías</button><button id="imp">⬇ Importar</button><button id="expb">⬆ Exportar</button></div></header>
+<div class="row" style="flex-wrap:wrap"><input id="q" type="search" placeholder="Buscar: cadena oro medalla…" style="flex:1 1 320px;min-width:200px"><div id="acts" style="display:contents"><button id="vw">☰ Lista</button><button id="sc">📷 Escanear</button><button id="sl">☑ Seleccionar</button><button id="mm">⋯ Más</button></div><button id="ft">🔎 Filtros<span id="fn"></span></button><button id="fc">✖ Limpiar todo</button><button class="p" id="new">＋ Nuevo</button></div><div class="row" id="masr" hidden><button id="lm">📍 Ubicaciones</button><button id="cm">🏷 Categorías</button><button id="imp">⬇ Importar</button><button id="expb">⬆ Exportar</button></div></header>
 <div id="tools"><div class="fp" id="flt">
-<div><label>🔎 Buscar en</label><select id="sa"><option value="">Este inventario</option><option value="all">Todos los inventarios</option></select></div>
+
 <div><label>📍 Ubicación (escribe para buscar)</label><input id="loc" type="search" list="locs" autocomplete="off" placeholder="Todas"></div>
 <div><label>🏷 Categoría (escribe para buscar)</label><input id="cat" type="search" list="cats" autocomplete="off" placeholder="Todas"></div>
-<div><label>📷 Foto</label><select id="pf"><option value="">Todos</option><option value="con">Solo con foto</option><option value="sin">Solo sin foto</option></select></div>
+<div><label>📷 Foto</label><select id="pf"><option value="">Todos</option><option value="con">Con foto</option><option value="sin">Sin foto</option></select></div>
 <div><label>Estado</label><select id="es"><option value="">Activos</option><option value="ret">Retirados</option><option value="all" selected>Todos</option></select></div>
 <div><label>↕ Ordenar por</label><select id="so"></select><button id="sdir" style="margin-top:4px;width:100%"></button></div>
 <div style="flex:2 1 360px;min-width:300px"><label>📅 Fecha (año, mes/año o día/mes/año)</label><div class="dr"><select id="df"></select><input id="d1" inputmode="numeric" placeholder="desde 2022" autocomplete="off"><input id="d2" inputmode="numeric" placeholder="hasta 03/2024" autocomplete="off"></div></div>
-<div class="pan"><label style="display:flex;align-items:center;gap:6px;color:var(--fg)"><input type="checkbox" id="rp" style="width:auto"> 🛒 a reponer</label></div>
-<div><button id="fc">✖ Limpiar todo</button></div></div>
+<div><label style="display:flex;align-items:center;gap:6px;color:var(--fg)"><input type="checkbox" id="rp" style="width:auto"> 🛒 a reponer</label></div>
+</div>
 </div>
 <div id="rs"></div><div id="st"></div><div id="grid"></div><div id="list" hidden></div><div id="pr"></div>
 <input type="file" id="fi" multiple hidden accept=".csv,.json,.zip,.xlsx">
@@ -63,24 +66,30 @@ label{display:block;margin:6px 0 2px;font-size:12px;color:var(--mut)}dialog inpu
 <p style="font-size:12px;color:var(--mut)"><b>Sincronizar entre dispositivos:</b> exporta el ZIP, guárdalo en iCloud Drive / Google Drive / OneDrive, y en el otro dispositivo usa «Importar» con ese ZIP. Se fusionan los cambios (gana el más reciente) y nada se pisa a ciegas.</p><button class="xb" onclick="xd.close()">Cerrar</button></dialog>
 <dialog id="dlg"><form method="dialog" id="f" class="fx">
 <div class="fh"><b>Artículo</b></div>
-<div class="fi"><label>Nombre</label><input id="name" required></div>
-<div class="fi"><label>Foto (hasta 3; ★ marca la portada)</label><div id="pvs" class="pvs"></div><input type="file" id="ph" accept="image/*" multiple><div class="fr" style="margin-top:6px"><button type="button" id="ai">✨ Rellenar con IA desde la foto</button> <small id="aim"></small></div></div>
+<div class="fi"><input id="name" class="ttl" required placeholder="Nombre del artículo"></div>
+<div class="fi"><label>Foto (hasta 3; ★ marca la portada)</label><div id="pvs" class="pvs"></div><input type="file" id="ph" accept="image/*" multiple><div class="fr" style="margin-top:6px"><button type="button" id="ai" hidden>IA</button> <small id="aim"></small></div></div>
+
+<div class="gr" style="grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr) minmax(0,1.3fr)"><div class="fi"><label>Fecha compra</label><input id="date" type="date"></div><div class="fi"><label>Precio €</label><input id="price" type="number" step="0.01"></div><div class="fi"><label>Código de barras</label><span style="display:flex;gap:6px"><input id="code" inputmode="numeric" style="flex:1;min-width:0"><button type="button" id="scanf" title="Escanear" style="min-width:44px">📷</button></span></div></div>
+<div class="gr" style="grid-template-columns:minmax(0,.6fr) minmax(0,1fr) minmax(0,1fr)"><div class="fi"><label>Talla</label><input id="talla"></div><div class="fi"><label>Marca</label><input id="brand"></div><div class="fi"><label>Modelo</label><input id="model"></div></div>
+<div id="sibbox" class="fi" hidden><label id="sibl">Este artículo está en</label><div id="sibsel" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px"></div></div>
+<button type="button" id="lote" hidden style="margin:4px 0 8px">+ Añadir lote (otra caducidad)</button>
 <div class="fi"><label>Ubicación (niveles con ›)</label><textarea id="location" rows="2"></textarea><div id="locsug" class="sug"></div><datalist id="locs"></datalist></div>
-<div class="gr g3"><div class="fi"><label>Fecha de compra</label><input id="date" type="date"></div><div class="fi"><label>Precio (€)</label><input id="price" type="number" step="0.01"></div><div class="fi pan"><label>Caducidad</label><input id="exp" type="date"></div></div>
-<div class="gr"><div class="fi"><label>Categoría</label><input id="category" list="cats"></div><div class="fi"><label>Marca</label><input id="brand"></div><div class="fi"><label>Modelo</label><input id="model"></div></div>
-<div class="gr"><div class="fi"><label>Código de barras</label><input id="code" inputmode="numeric"></div><div class="fi"><label>Cantidad</label><input id="qty" type="number" min="0" step="any"></div><div class="fi pan"><label>Mínima (avisa)</label><input id="min" type="number" min="0" step="any"></div><div class="fi pan"><label>Unidad (ud, kg, l…)</label><input id="unit"></div></div>
-<div class="gr"><div class="fi"><label>Retirada (si ya no lo tienes)</label><div class="fr"><input id="ret" type="date"><button type="button" id="rethoy">Hoy</button></div></div><div class="fi"><label>Motivo de retirada</label><input id="retWhy" list="rm" placeholder="Vendido, regalado, tirado…" autocomplete="off"><datalist id="rm"><option value="Vendido"><option value="Regalado"><option value="Donado"><option value="Tirado"><option value="Roto"><option value="Perdido"><option value="Consumido"><option value="Caducado"></datalist></div></div>
+<div class="gr" style="grid-template-columns:minmax(0,.55fr) minmax(0,1.25fr) minmax(0,.6fr) minmax(0,.6fr)"><div class="fi"><label id="qtyl">Cantidad</label><input id="qty" type="number" min="0" step="any"></div><div class="fi"><label>Caducidad</label><input id="exp" type="date"></div><div class="fi"><label>Mínima</label><input id="min" type="number" min="0" step="any"></div><div class="fi"><label>Unidad</label><input id="unit"></div></div>
+<div class="gr"><div class="fi"><label>Categoría</label><input id="category" list="cats"></div><div class="fi"><label>Clase (medicamentos)</label><input id="clase" list="clases" placeholder="Antibiótico, analgésico…"><datalist id="clases"><option>Antibiótico</option><option>Analgésico</option><option>Antiinflamatorio</option><option>Antihistamínico</option><option>Antiséptico</option><option>Otro</option></datalist></div></div>
+<div class="fi"><label id="notesL">Descripción</label><textarea id="notes" rows="2"></textarea></div>
 <div class="fi"><label>Etiquetas (separadas por coma)</label><input id="tags"></div>
-<div class="fi"><label id="notesL">Notas</label><textarea id="notes" rows="2"></textarea></div>
-<div class="fbtn"><button type="button" id="del">Borrar</button><button type="button" id="dup" hidden>⧉ Duplicar</button><span><button type="button" id="cx">Cancelar</button> <button id="ok" value="ok" class="fok">Guardar</button></span></div>
+<div class="fi"><label style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="out" style="width:auto;min-height:auto"> Retirado (sale del recuento; fecha y motivo son opcionales)</label></div>
+<div class="gr"><div class="fi"><label>Fecha de retirada</label><div class="fr"><input id="ret" type="date"><button type="button" id="rethoy">Hoy</button></div></div><div class="fi"><label>Motivo</label><input id="retWhy" list="rm" placeholder="Vendido, regalado, tirado…" autocomplete="off"><datalist id="rm"><option value="Vendido"><option value="Regalado"><option value="Donado"><option value="Tirado"><option value="Roto"><option value="Perdido"><option value="Consumido"><option value="Caducado"></datalist></div></div>
+<div class="fbtn" style="position:sticky;bottom:-14px;background:var(--bg);padding:8px 0 6px;border-top:1px solid var(--line);z-index:3"><button type="button" id="del">Borrar</button><button type="button" id="dup" hidden>⧉ Duplicar</button><span><button type="button" id="cx">Cancelar</button> <button id="ok" value="ok" class="fok">Guardar</button></span></div>
 <div id="lb"><img id="lbi" alt=""></div></form></dialog>
 <dialog id="ld"><b>📍 Ubicaciones</b><p style="font-size:13px;color:var(--mut)">Escribe a la derecha el nombre nuevo (las que coincidan se fusionan). Los niveles se separan con ›, p. ej. «Dormitorio › Armario › Balda 1»; al renombrar «Dormitorio» se renombra todo lo que hay dentro. «Sugerir» propone agrupar, por ejemplo, «Balda 1 Puerta 3 Armario 1 Vestidor» en «Vestidor». <b>Haz antes una copia ZIP</b> por seguridad.</p>
 <label style="display:flex;gap:6px;align-items:center;color:var(--fg);font-size:13px"><input type="checkbox" id="ld-mv" checked style="width:auto"> Pasar el detalle (balda, cajón…) a la descripción</label>
 <div id="ld-t" style="max-height:48vh;overflow:auto"></div><p><button type="button" id="ld-s">✨ Sugerir agrupación</button> <button type="button" id="ld-a" style="background:#7c4dff;color:#fff">Aplicar</button> <button type="button" id="ld-u" hidden>↩ Deshacer</button> <button type="button" onclick="ld.close()">Cerrar</button></p></dialog>
 <dialog id="sd"><b>📷 Escanear o identificar</b><p style="font-size:13px;color:var(--mut)">Haz la foto de cerca y enfocada. Funciona en iPhone y Android.</p>
-<button class="xb" id="s1">▮▯▮ Foto del código de barras</button><button class="xb" id="s2">✨ Foto del artículo (IA, necesita internet y clave)</button>
+<button class="xb" id="s1">▮▯▮ Foto del código de barras</button>
+<button class="xb" id="s2" hidden></button><details hidden><summary>IA</summary><input id="k" type="password" autocomplete="off"><input id="mo" value="claude-haiku-5-5"><button type="button" id="ks" class="xb">Guardar</button></details>
 <label>…o escribe el código</label><div style="display:flex;gap:6px"><input id="s-c" inputmode="numeric" placeholder="8410000000000"><button type="button" id="s3">Buscar</button></div>
-<p id="s-m" style="font-size:13px"></p><details><summary>⚙️ Ajustes de la IA</summary><p style="font-size:12px;color:var(--mut)">Opcional. Usa tu propia clave de API de Anthropic (con coste por uso, distinta de la suscripción a Claude). Se guarda solo en este navegador y no entra en las copias ZIP. La IA y la búsqueda del código de barras necesitan internet; el resto de la app no.</p><label>Clave API</label><input id="k" type="password" autocomplete="off"><label>Modelo</label><input id="mo" value="claude-haiku-5-5"><button type="button" id="ks" class="xb">Guardar ajustes</button></details>
+<p id="s-m" style="font-size:13px"></p>
 <p><button type="button" onclick="sd.close()" class="xb">Cerrar</button></p><input type="file" id="sf" accept="image/*" capture="environment" hidden></dialog>
 <datalist id="cats"></datalist>
 <dialog id="md"><b>⬇ Importar tabla (Excel o CSV)</b><p id="md-i" style="font-size:13px;color:var(--mut)"></p>
@@ -100,8 +109,8 @@ label{display:block;margin:6px 0 2px;font-size:12px;color:var(--mut)}dialog inpu
 <p><button type="button" id="cd-a" style="background:#7c4dff;color:#fff">Aplicar cambios</button> <button type="button" onclick="cd.close()">Cerrar</button></p></dialog>
 <script>
 const $=s=>document.querySelector(s),xd=$('#xd');
-const FIELDS=['name','location','brand','model','category','code','qty','min','unit','price','date','exp','ret','retWhy','tags','notes'];
-const HEAD={name:'Nombre',location:'Ubicación',brand:'Marca',model:'Modelo',category:'Categoría',code:'Código de barras',qty:'Cantidad',min:'Cant. mínima',unit:'Unidad',price:'Precio',date:'Fecha compra',exp:'Caducidad',ret:'Fecha retirada',retWhy:'Motivo retirada',tags:'Etiquetas',notes:'Notas'};
+const FIELDS=['name','location','brand','model','talla','clase','category','code','qty','min','unit','price','date','exp','ret','retWhy','tags','notes'];
+const HEAD={talla:'Talla',clase:'Clase',name:'Nombre',location:'Ubicación',brand:'Marca',model:'Modelo',category:'Categoría',code:'Código de barras',qty:'Cantidad',min:'Cant. mínima',unit:'Unidad',price:'Precio',date:'Fecha compra',exp:'Caducidad',ret:'Fecha retirada',retWhy:'Motivo retirada',tags:'Etiquetas',notes:'Notas'};
 const EMO={casa:'📦',des:'<svg viewBox="0 0 64 64" style="width:2.6em;height:2.6em;vertical-align:-0.5em"><path d="M4 12h8l6 28h30l5-20H16" fill="none" stroke="#534AB7" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/><rect x="18" y="20" width="10" height="10" rx="2" fill="#EF9F27"/><rect x="30" y="20" width="10" height="10" rx="2" fill="#E24B4A"/><rect x="42" y="20" width="8" height="10" rx="2" fill="#97C459"/><circle cx="22" cy="48" r="5" fill="#534AB7"/><circle cx="44" cy="48" r="5" fill="#534AB7"/></svg>',bot:'<svg viewBox="0 0 24 24" style="width:1.8em;height:1.8em;vertical-align:-0.35em"><rect x="1" y="1" width="22" height="22" rx="5" fill="#fff" stroke="#e53935" stroke-width="2"/><path d="M9.5 4h5v5.5H20v5h-5.5V20h-5v-5.5H4v-5h5.5z" fill="#e53935"/></svg>'};const SEP=' › ',paths=l=>{const p=(l||'').split(SEP),o=[];if(!l)return o;for(let k=1;k<=p.length;k++)o.push(p.slice(0,k).join(SEP));return o},inLoc=(a,b)=>a==b||(a||'').startsWith(b+SEP),tl=s=>(s||'').split(',').map(x=>x.trim()).filter(Boolean),fixLoc=v=>(v||'').split(/\s*[›>]\s*/).filter(Boolean).join(SEP),remap=(l,m)=>{const k=Object.keys(m).filter(k=>l==k||l.startsWith(k+SEP)).sort((a,b)=>b.length-a.length)[0];return k===undefined?l:fixLoc(m[k]+l.slice(k.length))};let XC=[],selOn=false;const S=new Set();let items=[],db,cur=null,inv='casa',view='grid',shown=[];
 const flash=m=>{st(m);$('#st').dataset.k=1;setTimeout(()=>{delete $('#st').dataset.k;render()},6000)};
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6),st=m=>$('#st').textContent=m;
@@ -226,19 +235,24 @@ async function importFiles(files){const msg=[];
   if(ext=='csv'||ext=='xlsx')msg.push(f.name+': '+await importTable(f,ext));
   else if(ext=='json')msg.push(f.name+': '+await merge(JSON.parse(await f.text())));
   else if(ext=='zip'){const z=await unzip(await f.arrayBuffer()),dec=new TextDecoder(),tch=new Set();let a=0,u=0,p=0;
-   if(z['items.json'])for(const o of JSON.parse(dec.decode(z['items.json']))){const k=items.findIndex(i=>String(i.id)==String(o.id));
+   if(confirm('¿Sustituir TODO lo que tienes por el contenido de este ZIP?\n\nAceptar = sustituir (quita ubicaciones y categorías antiguas)\nCancelar = mezclar con lo que ya tienes')){await tx('items','readwrite',x=>x.clear());await tx('photos','readwrite',x=>x.clear());items.length=0}
+   const zItems=z['items.json']?JSON.parse(dec.decode(z['items.json'])):[],pmap={};for(const o of zItems)for(const q of (o.phs||[]))pmap[q]=o.id;
+   if(z['items.json'])for(const o of zItems){const k=items.findIndex(i=>String(i.id)==String(o.id));
     if(k<0){items.push(o);await putI(o);tch.add(String(o.id));a++}else if((o.upd||0)>(items[k].upd||0)){items[k]=o;await putI(o);tch.add(String(o.id));u++}}
-   for(const k in z){const m=k.match(/^photos\/(.+)\.jpg$/),base=m&&m[1].split('_')[0],it=base&&items.find(i=>String(i.id)==base);if(it&&!(await getP(m[1]))){await putP(m[1],new Blob([z[k]],{type:'image/jpeg'}));it.ph=1;if(!Array.isArray(it.phs)||!it.phs.includes(m[1]))it.phs=[...new Set([...pks(it),m[1]])];await putI(it);p++}}
+   for(const k in z){const m=k.match(/^photos\/(.+)\.jpg$/),base=m&&(pmap[m[1]]??m[1].split('_')[0]),it=base&&items.find(i=>String(i.id)==String(base));if(it){await putP(m[1],new Blob([z[k]],{type:'image/jpeg'}));it.ph=1;if(!Array.isArray(it.phs)||!it.phs.includes(m[1]))it.phs=[...new Set([...pks(it),m[1]])];await putI(it);p++}}
    msg.push(`${f.name}: ${a} añadidos, ${u} actualizados, ${p} fotos`)}}
  render();st(msg.join(' · '));$('#st').dataset.k=1;setTimeout(()=>{delete $('#st').dataset.k;render()},6000)}
 // ---- Exportar
 const cols=r=>FIELDS.filter(k=>r.some(x=>x[k]));
 const stamp=()=>msISO(Date.now()),stampF=(d=new Date())=>''+d.getFullYear()+p2(d.getMonth()+1)+p2(d.getDate())+p2(d.getHours())+p2(d.getMinutes()),dl=(b,n)=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=n;a.click()};
 async function exportZip(){st('Preparando copia…');const files=[],enc=new TextEncoder(),live=items.filter(i=>!i.del);
- files.push({n:'items.json',d:enc.encode(JSON.stringify(items))},{n:'items.csv',d:enc.encode(toCsv(live,['id','inv',...FIELDS]))});
- for(const i of live){if(!i.ph)continue;for(const k of pks(i)){const b=await getP(k);if(b)files.push({n:`photos/${k}.jpg`,d:new Uint8Array(await b.arrayBuffer())})}}
+ const used=new Set(),nm={},san=t=>(t||'').replace(/[\/\\:*?"<>|]/g,'').replace(/\s+/g,' ').trim().slice(0,80);
+ for(const i of live){if(!i.ph)continue;const base=san(i.code?i.code+'_'+i.name:i.name)||('articulo'+i.id);nm[i.id]=[];let j=0;for(const k of pks(i)){let t=base+(j?' ('+(j+1)+')':'');let c=2;while(used.has(t))t=base+' ('+(c++)+')';used.add(t);nm[i.id].push([k,t]);j++}}
+ for(const i of live){if(!nm[i.id])continue;for(const [k,t] of nm[i.id]){const b=await getP(k);if(b)files.push({n:`photos/${t}.jpg`,d:new Uint8Array(await b.arrayBuffer())})}}
+ const outItems=items.map(i=>nm[i.id]?{...i,phs:nm[i.id].map(x=>x[1])}:i);
+ files.unshift({n:'items.json',d:enc.encode(JSON.stringify(outItems))},{n:'items.csv',d:enc.encode(toCsv(live,['id','inv',...FIELDS]))});
  dl(zip(files),`inventario-${stampF()}.zip`);st(`Exportados ${live.length} artículos y ${files.length-2} fotos`)}
-const invN=v=>({casa:'Casa',des:'Despensa',bot:'Botiquín'})[v];const invName=()=>($('#sa').value=='all'||$('#q').value.trim())?'Todos':invN(inv);
+const invN=v=>({casa:'Casa',des:'Despensa',bot:'Botiquín'})[v];const invName=()=>'Todos';
 async function exportPdf(){st('Preparando PDF…');const pan=inv!='casa',es=$('#es').value,rows=[];
  for(const r of shown){let u='';if(r.ph){const b=await getP(pks(r)[0]);if(b)u=await new Promise(o=>{const f=new FileReader();f.onload=()=>o(f.result);f.readAsDataURL(b)})}rows.push([r,u])}
  const tot=shown.filter(r=>!isRet(r)).reduce((s,r)=>s+(+r.price||0),0),
@@ -292,6 +306,7 @@ async function aiDraft(blob){const c=await getCfg();if(!c.key)throw new Error('f
  const j=await r.json();if(!r.ok)throw new Error(j.error?.message||r.status);return JSON.parse(j.content.map(x=>x.text||'').join('').match(/\{[\s\S]*\}/)[0])}
 async function completePend(){if(!navigator.onLine)return;let n=0;for(const i of items.filter(x=>x.pend&&!x.del&&x.code)){const d=(await lookup(i.code)).d;if(!d)continue;if(d.name)i.name=d.name;for(const f of['brand','model','category','notes'])if(!i[f]&&d[f])i[f]=d[f];i.pend=0;await putI(touch(i));n++}if(n){render();flash(n+' artículo(s) completados desde internet')}}
 async function handleCode(code){const m=$('#s-m');if(!code){m.textContent='Escribe un código.';return}
+ if(scanFor==='code'){scanFor=null;sd.close();$('#code').value=code;const rr=await lookup(code);const dd=rr.d||{};for(const k of ['name','brand','notes','category']){if(dd[k]&&!$('#'+(k=='name'?'name':k)).value)$('#'+k).value=dd[k]}$('#aim').textContent=rr.d?`Datos encontrados en ${rr.src}: revisa y guarda`:'Código leído. No está en las bases de datos: rellena el resto a mano';return}
  const ex=items.find(i=>!i.del&&invOf(i)==inv&&i.code==code);if(ex){sd.close();edit(ex);flash('Ya lo tenías: ajusta la cantidad si hace falta');return}
  m.textContent='Buscando '+code+'…';const r=await lookup(code);const d=r.d;
  if(!d&&!navigator.onLine){const it={id:uid(),inv,qty:1,code,name:'Código '+code,pend:1,cre:Date.now()};items.push(it);await putI(touch(it));sd.close();render();return flash('Sin conexión: guardado el código '+code+'. Se completará al volver internet')}
@@ -313,12 +328,13 @@ const qtyT=i=>i.qty&&(i.qty!=1||i.unit)?`${i.qty} ${h(i.unit||'')}`:'';
 const p2=n=>String(n).padStart(2,'0'),msISO=ms=>{if(!ms)return '';const d=new Date(ms);return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`};
 const dfmt=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s||'');return m?`${m[3]}/${m[2]}/${m[1]}`:(s||'')};
 const money=p=>{const n=parseFloat(p);return p===''||p==null||!isFinite(n)?'':n.toFixed(2).replace('.',',')+' €'};
-const isRet=i=>!!(i.ret||i.retWhy);
+const isRet=i=>i.out===undefined?!!(i.ret||i.retWhy):!!i.out;
 const vms=m=>m>1.4e12&&m<4e12?m:0,creMs=i=>vms(i.cre||(typeof i.id=='string'&&/^[0-9a-z]{12}$/.test(i.id)&&isNaN(+i.id)?parseInt(i.id.slice(0,8),36):0));
+window.EXPG={};
 const SOL={az:'Nombre',location:'Ubicación',category:'Categoría',brand:'Marca',qty:'Cantidad',cre:'Fecha de alta',upd:'Última modificación',date:'Fecha de compra',price:'Precio',exp:'Caducidad'},
  DFO=[['date','Compra'],['cre','Alta'],['upd','Modificación'],['ret','Retirada'],['exp','Caducidad']],
  NAT={az:1,location:1,category:1,brand:1,tags:1,qty:1,exp:1,ret:-1,cre:-1,upd:-1,date:-1,price:-1},
- SV={qty:i=>+i.qty||0,ret:i=>i.ret||null,cre:i=>creMs(i)||(+i.id||0),upd:i=>i.upd||0,date:i=>i.date||null,price:i=>{const n=parseFloat(i.price);return isFinite(n)&&n>0?n:null},exp:i=>i.exp||null},
+ SV={qty:i=>+i.qty||0,ret:i=>i.ret||null,cre:i=>creMs(i)||(+i.id||0),upd:i=>i.upd||0,date:i=>i.date||null,price:i=>{const n=parseFloat(i.price);return isFinite(n)&&n>0?n:null},exp:i=>EXPG[norm(i.name)+'|'+norm(i.code||'')]||i.exp||null},
  DG={date:i=>i.date||'',cre:i=>msISO(creMs(i)),upd:i=>msISO(i.upd),ret:i=>i.ret||'',exp:i=>i.exp||''},
  MES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 let srt={casa:{k:'az',d:0},des:{k:'exp',d:0},bot:{k:'exp',d:0}},BUILT='',DL={};
@@ -348,33 +364,35 @@ const hay=i=>norm([i.name,i.brand,i.model,i.category,i.location,i.tags,i.notes,i
 function render(){const pan=inv!='casa';
  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.i==inv));updBar();
  document.querySelectorAll('.pan').forEach(e=>e.hidden=!pan);
- if(BUILT!=inv){BUILT=inv;$('#so').innerHTML=Object.keys(SOL).filter(k=>(k!='exp'&&k!='qty')||pan).map(k=>`<option value="${k}">${SOL[k]}</option>`).join('');
+ if(BUILT!=inv){BUILT=inv;$('#so').innerHTML=Object.keys(SOL).map(k=>`<option value="${k}">${SOL[k]}</option>`).join('');
   const dv=$('#df').value,ds=DFO.filter(x=>x[0]!='exp'||pan);$('#df').innerHTML=ds.map(x=>`<option value="${x[0]}">${x[1]}</option>`).join('');$('#df').value=ds.some(x=>x[0]==dv)?dv:'date'}
  const sv=srt[inv];$('#so').value=sv.k;$('#sdir').textContent='↕ '+dirLabel(sv);
- const ALL=$('#sa').value=='all'||!!$('#q').value.trim(),mine=items.filter(i=>!i.del&&(ALL||invOf(i)==inv)),act=mine.filter(i=>!isRet(i)),
+ const ALL=true,mine=items.filter(i=>!i.del&&(ALL||invOf(i)==inv)),act=mine.filter(i=>!isRet(i)),
   locs=[...new Set(mine.flatMap(i=>paths(i.location)))].sort((a,b)=>a.localeCompare(b,'es')),
   cats=[...new Set([...mine.map(i=>i.category).filter(Boolean),...XC])].sort((a,b)=>a.localeCompare(b,'es'));
  const d1=locs.map(x=>`<option value="${h(x)}">`).join(''),d2=cats.map(x=>`<option value="${h(x)}">`).join('');
  if(DL.l!==d1){DL.l=d1;$('#locs').innerHTML=d1}if(DL.c!==d2){DL.c=d2;$('#cats').innerHTML=d2}
  $('#cat').parentElement.hidden=!cats.length;
- const rp=pan&&$('#rp').checked,pf=$('#pf').value,es=$('#es').value,df=$('#df').value,lq=norm($('#loc').value),cq=norm($('#cat').value),
+ const rp=$('#rp').checked,pf=$('#pf').value,es=$('#es').value,df=$('#df').value,lq=norm($('#loc').value),cq=norm($('#cat').value),
   lo=parseD($('#d1').value,0),hi=parseD($('#d2').value,1),P=qParse($('#q').value),
   le=lq&&locs.find(x=>norm(x)==lq),ce=cq&&cats.find(x=>norm(x)==cq);
  $('#d1').classList.toggle('bad',!!$('#d1').value.trim()&&!lo);$('#d2').classList.toggle('bad',!!$('#d2').value.trim()&&!hi);
  const nf=[lq,cq,pf,es!='all'?es:'',lo||hi,rp].filter(Boolean).length;$('#fn').textContent=nf?` (${nf})`:'';
- shown=mine.filter(i=>{const r=isRet(i);if(es==''&&r)return false;if(es=='ret'&&!r)return false;if(QS=='exp30'&&!(inv!='casa'&&exp30(i)))return false;if(QS=='loc'&&i.location)return false;
+ EXPG={};mine.forEach(x=>{if(!x.exp||x.del)return;const k=norm(x.name)+'|'+norm(x.code||'');if(!EXPG[k]||x.exp<EXPG[k])EXPG[k]=x.exp});
+ shown=mine.filter(i=>{const r=isRet(i);if(es==''&&r)return false;if(es=='ret'&&!r)return false;if(QS=='exp30'&&!(exp30(i)&&!(i.qty!==''&&+i.qty===0)))return false;if(QS=='expired'&&!(i.exp&&days(i)<0&&!(i.qty!==''&&+i.qty===0)))return false;if(QS=='loc'&&i.location)return false;if(QS=='zero'&&!(i.qty!==''&&+i.qty===0))return false;
   if(lq&&(le?!inLoc(i.location,le):!norm(i.location).includes(lq)))return false;
   if(cq&&(ce?i.category!=ce:!norm(i.category).includes(cq)))return false;
   if(pf=='sin'&&i.ph)return false;if(pf=='con'&&!i.ph)return false;if(rp&&!rep(i))return false;
   if(lo||hi){const v=DG[df](i);if(!v||(lo&&v<lo)||(hi&&v>hi))return false}
-  if(P.range){const v=i.date||'';if(!v||v<P.range[0]||v>P.range[1])return false}else if(P.q&&!hay(i).includes(P.q))return false;
+  if(P.range){const v=i.date||'';if(!v||v<P.range[0]||v>P.range[1])return false}else if(P.q&&!P.q.split(' ').filter(Boolean).every(t=>hay(i).includes(t)))return false;
   return true}).sort(sorter());
+ const gk=x=>norm(x.name)+'|'+norm(x.code||'');const grp={};mine.forEach(x=>{const k=gk(x);(grp[k]=grp[k]||[]).push(x)});const repG={};shown.forEach(x=>{const k=gk(x);if(!repG[k]||(!repG[k].ph&&x.ph))repG[k]=x});shown=shown.filter(x=>repG[gk(x)]===x);shown.forEach(x=>{x._sib=grp[gk(x)].filter(o=>o.id!=x.id).map(o=>o.location||'Sin ubicación')});
  renderSum(mine,act);const g=$('#grid'),ls=$('#list');g.hidden=view!='grid';ls.hidden=view!='list';g.innerHTML='';ls.innerHTML='';$('#vw').textContent=view=='grid'?'☰ Lista':'▦ Tarjetas';
  const cb=i=>`<input type="checkbox" class="ckb"${S.has(i.id)?' checked':''}>`;
  if(view=='grid')for(const i of shown){const c=document.createElement('div'),meta=[dfmt(i.date),money(i.price)].filter(Boolean).join(' · ');c.className='card'+(S.has(i.id)?' sel':'')+(isRet(i)?' rt':'');
-  c.innerHTML=(selOn?`<span class="ck">${cb(i)}</span>`:'')+`<div class="im">${EMO[invOf(i)]}</div><div class="t"><b>${h(i.name)}</b>${invOf(i)=='bot'&&i.notes?`<div class="m">${h(i.notes)}</div>`:''}${i.pend?'<span class="b o">Sin completar</span>':''}${ALL?`<span class="ch" style="background:#7c4dff22">${EMO[invOf(i)]} ${invN(invOf(i))}</span>`:''}${chip(i.location)}${pan?badge(i)+' '+qtyT(i):''}${isRet(i)?'<span class="b x">Retirado</span>':''}${meta?`<div class="m">${h(meta)}</div>`:''}</div>`;
+  c.innerHTML=(selOn?`<span class="ck">${cb(i)}</span>`:'')+`<div class="im">${EMO[invOf(i)]}</div><div class="t"><b>${h(i.name)}</b>${invOf(i)=='bot'&&i.notes?`<div class="m">${h(i.notes)}</div>`:''}${i.pend?'<span class="b o">Sin completar</span>':''}${i.qty!==''&&+i.qty===0?'<span class="b r">Agotado</span>':''}${rep(i)?'<span class="b o">A reponer</span>':''}${chip(i.location)}${(i._sib||[]).map(x=>chip(x)).join('')}${pan?badge(i)+' '+qtyT(i):''}${isRet(i)?'<span class="b x">Retirado</span>':''}${meta?`<div class="m">${h(meta)}</div>`:''}</div>`;
   c.onclick=()=>pick(i,c);g.append(c);if(i.ph){const im=c.querySelector('.im');im._i=i;io.observe(im)}}
- else{const k=sv.k,up=NAT[k]*(sv.d?-1:1)>0,ar=c=>c.k&&c.k==k?(up?' ▲':' ▼'):'',CL=[{t:'Nombre',k:'az',f:i=>h(i.name)+(invOf(i)=='bot'&&i.notes?` `:'')+(i.pend?' <span class="b o">Sin completar</span>':'')+(isRet(i)?' <span class="b x">Retirado</span>':'')},...((inv=='bot'||ALL)?[{t:'Descripción',f:i=>invOf(i)=='bot'?h(i.notes):''}]:[]),...(ALL?[{t:'Inventario',f:i=>h(invN(invOf(i)))}]:[]),{t:'Ubicación',k:'location',f:i=>chip(i.location)},{t:'Categoría',k:'category',c:'hm',f:i=>h(i.category)},
+ else{const k=sv.k,up=NAT[k]*(sv.d?-1:1)>0,ar=c=>c.k&&c.k==k?(up?' ▲':' ▼'):'',CL=[{t:'Nombre',k:'az',f:i=>h(i.name)+(invOf(i)=='bot'&&i.notes?` `:'')+(i.pend?' <span class="b o">Sin completar</span>':'')+(isRet(i)?' <span class="b x">Retirado</span>':'')},...((inv=='bot'||ALL)?[{t:'Descripción',f:i=>invOf(i)=='bot'?h(i.notes):''}]:[]),{t:'Ubicación',k:'location',f:i=>chip(i.location)+(i._sib||[]).map(x=>chip(x)).join('')},{t:'Categoría',k:'category',c:'hm',f:i=>h(i.category)},
    ...(pan?[{t:'Cant.',k:'qty',f:qtyT},{t:'Caducidad',k:'exp',f:badge}]:[{t:'Marca',k:'brand',c:'hm',f:i=>h(i.brand)}]),
    {t:'Fecha compra',k:'date',c:'hm n',f:i=>h(dfmt(i.date))},{t:'Precio',k:'price',c:'n',f:i=>money(i.price)},
    {t:'Alta',k:'cre',c:'hm n',f:i=>h(dfmt(msISO(creMs(i))))},{t:'Modificado',k:'upd',c:'hm n',f:i=>h(dfmt(msISO(i.upd)))},
@@ -390,16 +408,18 @@ function render(){const pan=inv!='casa';
  if(!$('#st').dataset.k){const f=mine.filter(i=>i.ph).length,nr=mine.length-act.length,tot=shown.filter(i=>!isRet(i)).reduce((s,i)=>s+(+i.price||0),0),rr=pan?act.filter(rep).length:0,e=pan?act.filter(i=>i.exp&&days(i)<0).length:0,s=pan?act.filter(i=>i.exp&&days(i)>=0&&days(i)<=30).length:0;
   st(`${shown.length} de ${mine.length} artículos · ${f} con foto`+(nr?` · ${nr} retirados`:'')+(tot?` · 💶 ${money(tot)}`:'')+(pan?` · 🛒 ${rr} a reponer · ⚠ ${e} caducados · ${s} caducan en 30 días`:''))}}
 let PL=[],PG=[],QS=null;
-const exp30=i=>{if(!i.exp)return false;const d=days(i);return d!=null&&d<=30};
+const exp30=i=>{if(!i.exp)return false;const d=days(i);return d!=null&&d>=0&&d<=30};
 function renderSum(mine,act){const pan=inv!='casa',sin=act.filter(i=>!i.ph).length;
  const on=(q)=>(q=='exp'&&QS=='exp30')||(q=='loc'&&QS=='loc')||(q=='sin'&&$('#pf').value=='sin')||(q=='rep'&&$('#rp').checked)?' data-on="1"':'';
  const B=(q,n,l,c)=>`<button class="rs-b" data-q="${q}"${on(q)}><b style="color:${c}">${n}</b><small>${l}</small></button>`;
- $('#rs').innerHTML=B('tot',act.length,'activos','var(--text-primary)')+B('sin',sin,'sin foto','var(--text-primary)')+B('loc',act.filter(i=>!i.location).length,'sin ubicación','var(--text-primary)')+(pan?B('exp',act.filter(exp30).length,'caducan en 30 días','#A32D2D')+B('rep',act.filter(rep).length,'a reponer','#854F0B'):'');
+ $('#rs').innerHTML=B('tot',act.length,'activos','var(--text-primary)')+B('ret',mine.filter(isRet).length,'retirados','var(--text-primary)')+B('con',act.filter(i=>i.ph).length,'con foto','var(--text-primary)')+B('sin',sin,'sin foto','var(--text-primary)')+B('loc',act.filter(i=>!i.location).length,'sin ubicación','var(--text-primary)')+B('exp',act.filter(i=>exp30(i)&&!(i.qty!==''&&+i.qty===0)).length,'próximos a caducar','#854F0B')+B('expired',act.filter(i=>i.exp&&days(i)<0&&!(i.qty!==''&&+i.qty===0)).length,'caducados','#A32D2D')+B('rep',act.filter(rep).length,'a reponer','#854F0B')+B('zero',act.filter(i=>i.qty!==''&&+i.qty===0).length,'agotados','#A32D2D');
  $('#rs').querySelectorAll('button').forEach(b=>b.onclick=()=>{const q=b.dataset.q;QS=null;$('#pf').value='';$('#rp').checked=false;
-  if(q=='tot'){$('#fc').click();return}if(q=='sin')$('#pf').value='sin';if(q=='exp')QS='exp30';if(q=='loc')QS='loc';if(q=='rep')$('#rp').checked=true;render()})}
-async function edit(i){cur=i||{id:null,qty:1};if(!cur.id)cur.id=uid();for(const f of FIELDS)$('#'+f).value=cur[f]??'';$('#ph').value='';$('#del').hidden=!(i&&i.id);$('#dup').hidden=!(i&&i.id);$('#aim').textContent='';
+  if(q=='tot'){$('#fc').click();return}if(q=='sin')$('#pf').value='sin';if(q=='con')$('#pf').value='con';if(q=='zero')QS='zero';if(q=='expired')QS='expired';if(q=='ret')$('#es').value='ret';if(q=='exp')QS='exp30';if(q=='loc')QS='loc';if(q=='rep')$('#rp').checked=true;render()})}
+let multiQty=null;
+async function edit(i){cur=i||{id:null,qty:1};if(!cur.id)cur.id=uid();for(const f of FIELDS)$('#'+f).value=cur[f]??'';$('#out').checked=cur.out===undefined?!!(cur.ret||cur.retWhy):!!cur.out;$('#ph').value='';$('#del').hidden=!(i&&i.id);$('#dup').hidden=!(i&&i.id);$('#aim').textContent='';
  $('#notesL').textContent=(cur.inv||inv)=='bot'?'Descripción (para qué es)':'Notas';
  PL=pks(cur).map(k=>({k,isNew:false}));PG=[];if(cur._pf){PL.push({k:cur.id+'_'+uid(),b:cur._pf,isNew:true});delete cur._pf}
+ const gk0=x=>norm(x.name)+'|'+norm(x.code||'');const sb=cur.id?items.filter(x=>!x.del&&gk0(x)==gk0(cur)):[];$('#sibbox').hidden=sb.length<2;const tot=sb.reduce((t,x)=>t+(+x.qty||0),0);$('#sibl').textContent='Este artículo · total: '+tot+' uds';$('#lote').hidden=!(i&&i.id);const mL=new Set(sb.map(x=>x.location||'')).size>1;$('#qtyl').textContent=mL?'Cantidad total (todos los sitios)':'Cantidad';multiQty=mL?(+cur.qty||0):null;if(mL){$('#qty').value=tot;$('#qty').readOnly=true}else $('#qty').readOnly=false;$('#sibsel').innerHTML=sb.map(x=>`<span style="display:inline-flex;align-items:center;gap:4px;padding:5px 8px 5px 12px;border-radius:14px;background:${x.id==cur.id?'#c9bcff':'#e8e2ff'};color:#2b2340;font-size:14px">${h(x.location||'Sin ubicación')} · ${h(x.qty??1)}${x.exp?' · caduca '+dfmt(x.exp):' · sin caducidad'} <button type="button" data-open="${h(x.id)}" title="Abrir este registro" style="border:0;background:transparent;cursor:pointer">✏</button><button type="button" data-del="${h(x.id)}" title="Quitar este registro" style="border:0;background:transparent;cursor:pointer">✖</button></span>`).join('');
  await drawPv();$('#dlg').showModal()}
 async function drawPv(){const box=$('#pvs');box.innerHTML='';
  for(const[idx,p]of PL.entries()){const b=p.isNew?p.b:await getP(p.k);if(!b)continue;const d=document.createElement('div');d.className='pvi';
@@ -419,7 +439,9 @@ $('#dup').onclick=async()=>{const src=items.find(x=>x.id==cur.id);if(!src)return
 const locSug=()=>{const q=norm($('#location').value);const all=[...new Set(items.filter(i=>!i.del&&invOf(i)==inv&&i.location).map(i=>i.location))];const m=all.filter(l=>norm(l)!=q&&(!q||norm(l).includes(q))).sort((a,b)=>a.localeCompare(b,'es')).slice(0,8);$('#locsug').innerHTML=m.map(l=>`<button type="button" class="sugb" data-l="${h(l)}">${h(l)}</button>`).join('');$('#locsug').querySelectorAll('button').forEach(b=>b.onclick=()=>{$('#location').value=b.dataset.l;$('#locsug').innerHTML=''})};
 $('#location').oninput=locSug;$('#location').onfocus=locSug;
 $('#ph').onchange=async e=>{for(const f of [...e.target.files]){if(PL.length>=3){flash('Máximo 3 fotos por artículo');break}PL.push({k:cur.id+'_'+uid(),b:await shrink(f),isNew:true})}e.target.value='';drawPv()};
-$('#f').onsubmit=async(e)=>{for(const f of FIELDS)cur[f]=$('#'+f).value.trim();const lim=new Date().getFullYear()+2,yr=v=>{const m=/^(\d{4})/.exec(v||'');return m?+m[1]:0};const malos=[['date','compra'],['exp','caducidad'],['ret','retirada']].filter(([f])=>$('#'+f).value&&(yr($('#'+f).value)<1900||yr($('#'+f).value)>lim));if(malos.length&&!confirm('Revisa la fecha de '+malos.map(([f,n])=>n+': '+dfmt($('#'+f).value)).join(', ')+' (año muy raro). ¿Guardar igual?')){e.preventDefault();return}cur.location=fixLoc(cur.location);cur.qty=cur.qty===''?1:+cur.qty;cur.min=cur.min===''?'':+cur.min;if(!items.includes(cur)){cur.inv=cur.inv||inv;cur.cre=cur.cre||Date.now();items.push(cur)}
+$('#sibsel').onclick=async e=>{const o=e.target.closest('button');if(!o)return;const id=o.dataset.open??o.dataset.del;const x=items.find(y=>String(y.id)==String(id));if(!x)return;if(o.dataset.open!==undefined){if(x.id!=cur.id)edit(x);return}if(confirm('¿Quitar este registro del artículo? (el artículo no se borra)')){x.del=1;await putI(touch(x));$('#dlg').close();render();if(x.id==cur.id)return}};
+$('#lote').onclick=async()=>{const n={};for(const f of FIELDS)n[f]=$('#'+f).value.trim();n.qty=1;n.exp='';n.inv=cur.inv||inv;n.id=uid();n.cre=Date.now();n.upd=Date.now();n.phs=[];n.ph=0;n.out=false;items.push(n);await putI(n);$('#dlg').close();render();edit(n)};
+$('#f').onsubmit=async(e)=>{for(const f of FIELDS)cur[f]=$('#'+f).value.trim();cur.out=$('#out').checked;if(multiQty!==null){cur.qty=multiQty;multiQty=null}const lim=new Date().getFullYear()+2,yr=v=>{const m=/^(\d{4})/.exec(v||'');return m?+m[1]:0};const malos=[['date','compra'],['exp','caducidad'],['ret','retirada']].filter(([f])=>$('#'+f).value&&(yr($('#'+f).value)<1900||yr($('#'+f).value)>lim));if(malos.length&&!confirm('Revisa la fecha de '+malos.map(([f,n])=>n+': '+dfmt($('#'+f).value)).join(', ')+' (año muy raro). ¿Guardar igual?')){e.preventDefault();return}cur.location=fixLoc(cur.location);cur.qty=cur.qty===''?1:+cur.qty;cur.min=cur.min===''?'':+cur.min;if(!items.includes(cur)){cur.inv=cur.inv||inv;cur.cre=cur.cre||Date.now();items.push(cur)}
  if(cur.name&&!cur.name.startsWith('Código '))cur.pend=0;for(const p of PL)if(p.isNew)await putP(p.k,p.b.type=='image/jpeg'?p.b:await shrink(p.b));for(const k of PG)await delP(k);cur.phs=PL.map(p=>p.k);cur.ph=PL.length?1:0;delete cur._pf;await putI(touch(cur));render();if(isRet(cur)&&$('#es').value=='')flash('Artículo retirado: lo verás en Filtros → Estado → Retirados')};
 $('#rethoy').onclick=()=>{$('#ret').value=msISO(Date.now());$('#retWhy').focus()};
 $('#cx').onclick=()=>$('#dlg').close();
@@ -433,7 +455,7 @@ $('#x2').onclick=()=>{xd.close();const c=cols(shown);dl(xlsx(shown,c,invName()),
 $('#x3').onclick=()=>{xd.close();exportPdf()};
 $('#x4').onclick=()=>{xd.close();dl(new Blob([toCsv(shown,cols(shown))],{type:'text/csv'}),`${invName().toLowerCase()}-${stampF()}.csv`)};
 $('#fi').onchange=e=>{importFiles([...e.target.files]);e.target.value=''};
-['q','loc','cat','rp','pf','es','df','d1','d2','sa'].forEach(k=>$('#'+k).oninput=render);
+['q','loc','cat','rp','pf','es','df','d1','d2'].forEach(k=>$('#'+k).oninput=render);
 $('#pf').oninput=()=>{if($('#pf').value=='sin'&&view!='list'){view='list';saveUI()}render()};
 $('#so').oninput=()=>{srt[inv].k=$('#so').value;srt[inv].d=0;saveUI();render()};
 $('#sdir').onclick=()=>{srt[inv].d^=1;saveUI();render()};
@@ -450,6 +472,8 @@ $('#ld-a').onclick=async()=>{const mv=$('#ld-mv').checked,map={};document.queryS
 $('#ld-u').onclick=async()=>{for(const s of undo||[]){const i=items.find(x=>x.id==s.id);if(i){i.location=s.location;i.notes=s.notes;await putI(touch(i))}}undo=null;lmOpen();render();flash('Cambios deshechos')};
 $('#sc').onclick=async()=>{const c=await getCfg();$('#k').value=c.key||'';$('#mo').value=c.model||'claude-haiku-5-5';$('#s-m').textContent='';sd.showModal()};
 $('#ks').onclick=async()=>{await putP('_cfg',JSON.stringify({key:$('#k').value.trim(),model:$('#mo').value.trim()}));$('#s-m').textContent='Ajustes guardados.'};
+let scanFor=null;sd.addEventListener('close',()=>{scanFor=null});
+$('#scanf').onclick=()=>{$('#sc').click();scanFor='code'};
 $('#s1').onclick=()=>{$('#sf').dataset.m='bc';$('#sf').click()};$('#s2').onclick=()=>{$('#sf').dataset.m='ai';$('#sf').click()};$('#s3').onclick=()=>handleCode($('#s-c').value.replace(/\D/g,''));
 $('#sf').onchange=async e=>{const f=e.target.files[0],mode=e.target.dataset.m;e.target.value='';if(!f)return;const m=$('#s-m');
  try{if(mode=='bc'){m.textContent='Leyendo el código…';const c=await readBarcode(f);if(c)return handleCode(c);m.textContent='No he podido leer el código. Acércate más, enfoca y prueba de nuevo, o escríbelo a mano.'}
