@@ -103,7 +103,7 @@ header .tab{display:none!important}
 <dialog id="bd"><b>✏ Editar selección</b><p id="bd-n" style="font-size:13px;color:var(--mut)"></p>
 <label>Mover a ubicación (vacío = no cambiar)</label><input id="b-l" list="locs"><label>Categoría (vacío = no cambiar)</label><input id="b-c" list="cats"><label>Mover a inventario (vacío = no mover)</label><select id="b-inv"><option value="">No mover</option><option value="casa">📦 Casa</option><option value="des">🛒 Despensa</option><option value="bot">🏥 Botiquín</option></select>
 <label>Añadir etiquetas (separadas por coma)</label><input id="b-t"><label>Quitar etiquetas</label><input id="b-r"><label>Retirar: fecha (vacío = no cambiar)</label><input id="b-rd" type="date"><label>Motivo de retirada</label><input id="b-rw" list="rm" autocomplete="off"><label style="display:flex;gap:6px;align-items:center;color:var(--fg)"><input type="checkbox" id="b-un" style="width:auto"> Quitar la retirada (volver a activos)</label>
-<p><button type="button" id="b-d">🗑 Borrar</button> <button type="button" onclick="bd.close()">Cancelar</button> <button type="button" id="b-ok" style="background:#7c4dff;color:#fff">Aplicar</button></p></dialog>
+<label>Marca (vacío = no cambiar)</label><input id="b-br"><label>Modelo (vacío = no cambiar)</label><input id="b-mo"><label>Talla (vacío = no cambiar)</label><input id="b-ta"><label>Clase (vacío = no cambiar)</label><input id="b-cl"><label>Unidad (vacío = no cambiar)</label><input id="b-uni"><label>Cantidad mínima (vacío = no cambiar)</label><input id="b-mi" type="number" step="any"><label>Precio (vacío = no cambiar)</label><input id="b-pr" type="number" step="0.01"><label>Fecha de compra (vacío = no cambiar)</label><input id="b-da" type="date"><label>Caducidad (vacío = no cambiar)</label><input id="b-ex" type="date"><label>Notas (vacío = no cambiar; sustituye las actuales)</label><textarea id="b-no" rows="2"></textarea><p><button type="button" id="b-d">🗑 Borrar</button> <button type="button" onclick="bd.close()">Cancelar</button> <button type="button" id="b-ok" style="background:#7c4dff;color:#fff">Aplicar</button></p></dialog>
 <dialog id="cd"><b>🏷 Categorías</b><p style="font-size:13px;color:var(--mut)">Cambia el nombre a la derecha (si coincide con otra se fusionan; vacío = quitar la categoría).</p><div id="cd-t" style="max-height:44vh;overflow:auto"></div>
 <label>Nueva categoría</label><div style="display:flex;gap:6px"><input id="cd-n" placeholder="Bolsos"><button type="button" id="cd-add">Añadir</button></div>
 <p><button type="button" id="cd-a" style="background:#7c4dff;color:#fff">Aplicar cambios</button> <button type="button" onclick="cd.close()">Cerrar</button></p></dialog>
@@ -360,6 +360,7 @@ const parseD=(s,end)=>{s=String(s||'').trim();if(!s)return '';let m,y,mo,d;
 function qParse(raw){let s=raw.trim();const r=/^(\d{4})\s*(?:-|–|a|al|hasta)\s*(\d{4})$/i.exec(s);if(r)return{range:[r[1]+'-01-01',r[2]+'-12-31'].sort()};
  const m=/^([a-záéíóú]{3,})\.?\s+(?:de\s+)?(\d{4})$/i.exec(s);if(m){const k=MES.indexOf(norm(m[1]).slice(0,3));if(k>=0)s=p2(k+1)+' '+m[2]}
  return{q:norm(s)}}
+const SW=new Set(['el','la','los','las','de','del','en','y','o','con','un','una','al','para','por']);
 const hay=i=>norm([i.name,i.brand,i.model,i.category,i.location,i.tags,i.notes,i.code,i.retWhy,i.date,dfmt(i.date),i.exp,dfmt(i.exp),i.ret,dfmt(i.ret)].join(' '));
 function render(){const pan=inv!='casa';
  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.i==inv));updBar();
@@ -379,14 +380,14 @@ function render(){const pan=inv!='casa';
  $('#d1').classList.toggle('bad',!!$('#d1').value.trim()&&!lo);$('#d2').classList.toggle('bad',!!$('#d2').value.trim()&&!hi);
  const nf=[lq,cq,pf,es!='all'?es:'',lo||hi,rp].filter(Boolean).length;$('#fn').textContent=nf?` (${nf})`:'';
  EXPG={};mine.forEach(x=>{if(!x.exp||x.del)return;const k=norm(x.name)+'|'+norm(x.code||'');if(!EXPG[k]||x.exp<EXPG[k])EXPG[k]=x.exp});
- shown=mine.filter(i=>{const r=isRet(i);if(es==''&&r)return false;if(es=='ret'&&!r)return false;if(QS=='exp30'&&!(exp30(i)&&!(i.qty!==''&&+i.qty===0)))return false;if(QS=='expired'&&!(i.exp&&days(i)<0&&!(i.qty!==''&&+i.qty===0)))return false;if(QS=='loc'&&i.location)return false;if(QS=='zero'&&!(i.qty!==''&&+i.qty===0))return false;
+ shown=mine.filter(i=>{const r=isRet(i);if(es==''&&r)return false;if(es=='ret'&&!r)return false;if(QS=='exp30'&&!(exp30(i)&&!(i.qty!==''&&+i.qty===0)))return false;if(QS=='expired'&&!(i.exp&&days(i)<0&&!(i.qty!==''&&+i.qty===0)))return false;if(QS=='loc'&&(i.location||isRet(i)))return false;if(QS=='zero'&&!(i.qty!==''&&+i.qty===0))return false;
   if(lq&&(le?!inLoc(i.location,le):!norm(i.location).includes(lq)))return false;
   if(cq&&(ce?i.category!=ce:!norm(i.category).includes(cq)))return false;
   if(pf=='sin'&&i.ph)return false;if(pf=='con'&&!i.ph)return false;if(rp&&!rep(i))return false;
   if(lo||hi){const v=DG[df](i);if(!v||(lo&&v<lo)||(hi&&v>hi))return false}
-  if(P.range){const v=i.date||'';if(!v||v<P.range[0]||v>P.range[1])return false}else if(P.q&&!P.q.split(' ').filter(Boolean).every(t=>hay(i).includes(t)))return false;
+  if(P.range){const v=i.date||'';if(!v||v<P.range[0]||v>P.range[1])return false}else if(P.q&&!P.q.split(' ').filter(t=>t&&!SW.has(t)).every(t=>hay(i).includes(t)))return false;
   return true}).sort(sorter());
- const gk=x=>norm(x.name)+'|'+norm(x.code||'');const grp={};mine.forEach(x=>{const k=gk(x);(grp[k]=grp[k]||[]).push(x)});const repG={};shown.forEach(x=>{const k=gk(x);if(!repG[k]||(!repG[k].ph&&x.ph))repG[k]=x});shown=shown.filter(x=>repG[gk(x)]===x);shown.forEach(x=>{x._sib=grp[gk(x)].filter(o=>o.id!=x.id).map(o=>o.location||'Sin ubicación')});
+ const gk=x=>norm(x.name)+'|'+norm(x.code||'');const grp={};mine.forEach(x=>{const k=gk(x);(grp[k]=grp[k]||[]).push(x)});const repG={};shown.forEach(x=>{const k=gk(x);if(!repG[k]||(!repG[k].ph&&x.ph))repG[k]=x});if(!lq)shown=shown.filter(x=>repG[gk(x)]===x);shown.forEach(x=>{x._sib=grp[gk(x)].filter(o=>o.id!=x.id).map(o=>o.location||'Sin ubicación')});
  renderSum(mine,act);const g=$('#grid'),ls=$('#list');g.hidden=view!='grid';ls.hidden=view!='list';g.innerHTML='';ls.innerHTML='';$('#vw').textContent=view=='grid'?'☰ Lista':'▦ Tarjetas';
  const cb=i=>`<input type="checkbox" class="ckb"${S.has(i.id)?' checked':''}>`;
  if(view=='grid')for(const i of shown){const c=document.createElement('div'),meta=[dfmt(i.date),money(i.price)].filter(Boolean).join(' · ');c.className='card'+(S.has(i.id)?' sel':'')+(isRet(i)?' rt':'');
@@ -436,7 +437,7 @@ $('#dup').onclick=async()=>{const src=items.find(x=>x.id==cur.id);if(!src)return
  for(const b of bl)PL.push({k:cur.id+'_'+uid(),b,isNew:true});
  await drawPv();
  $('#aim').textContent='Copia creada. Cambia lo que necesites (por ejemplo, la caducidad) y guarda';};
-const locSug=()=>{const q=norm($('#location').value);const all=[...new Set(items.filter(i=>!i.del&&invOf(i)==inv&&i.location).map(i=>i.location))];const m=all.filter(l=>norm(l)!=q&&(!q||norm(l).includes(q))).sort((a,b)=>a.localeCompare(b,'es')).slice(0,8);$('#locsug').innerHTML=m.map(l=>`<button type="button" class="sugb" data-l="${h(l)}">${h(l)}</button>`).join('');$('#locsug').querySelectorAll('button').forEach(b=>b.onclick=()=>{$('#location').value=b.dataset.l;$('#locsug').innerHTML=''})};
+const locSug=()=>{const parts=$('#location').value.split(/\s*[›>]\s*/),last=norm(parts.pop()),par=parts.filter(Boolean).join(SEP);const all=new Set();items.forEach(i=>{if(!i.del&&invOf(i)==inv&&i.location)paths(i.location).forEach(p=>all.add(p))});const m=[...all].filter(p=>{const pp=p.split(SEP),nm=pp.pop();return pp.join(SEP)==par&&(!last||norm(nm).includes(last))}).sort((a,b)=>a.localeCompare(b,'es'));$('#locsug').style.cssText='max-height:260px;overflow:auto;display:flex;flex-wrap:wrap;gap:4px';$('#locsug').innerHTML=m.map(l=>`<button type="button" class="sugb" data-l="${h(l)}">${h(l.split(SEP).pop())}</button>`).join('');$('#locsug').querySelectorAll('button').forEach(b=>b.onclick=()=>{$('#location').value=b.dataset.l+SEP;locSug();$('#location').focus()})};
 $('#location').oninput=locSug;$('#location').onfocus=locSug;
 $('#ph').onchange=async e=>{for(const f of [...e.target.files]){if(PL.length>=3){flash('Máximo 3 fotos por artículo');break}PL.push({k:cur.id+'_'+uid(),b:await shrink(f),isNew:true})}e.target.value='';drawPv()};
 $('#sibsel').onclick=async e=>{const o=e.target.closest('button');if(!o)return;const id=o.dataset.open??o.dataset.del;const x=items.find(y=>String(y.id)==String(id));if(!x)return;if(o.dataset.open!==undefined){if(x.id!=cur.id)edit(x);return}if(confirm('¿Quitar este registro del artículo? (el artículo no se borra)')){x.del=1;await putI(touch(x));$('#dlg').close();render();if(x.id==cur.id)return}};
@@ -484,9 +485,10 @@ function pick(i,el){if(!selOn)return edit(i);S.has(i.id)?S.delete(i.id):S.add(i.
 function updBar(){$('#bar').style.display=selOn?'flex':'none';$('#bn').textContent=S.size+' seleccionados';$('#sl').textContent=selOn?'☑ Salir de selección':'☑ Seleccionar'}
 $('#sl').onclick=$('#bx').onclick=()=>{selOn=!selOn;S.clear();render()};
 $('#ba').onclick=()=>{shown.forEach(i=>S.add(i.id));render()};$('#bz').onclick=()=>{S.clear();render()};
-$('#be').onclick=()=>{if(!S.size)return flash('Selecciona algún artículo');$('#bd-n').textContent=S.size+' artículos seleccionados';['b-l','b-c','b-t','b-r','b-rd','b-rw'].forEach(k=>$('#'+k).value='');$('#b-un').checked=false;$('#b-inv').value='';bd.showModal()};
+$('#be').onclick=()=>{if(!S.size)return flash('Selecciona algún artículo');$('#bd-n').textContent=S.size+' artículos seleccionados';['b-l','b-c','b-t','b-r','b-rd','b-rw','b-br','b-mo','b-ta','b-cl','b-uni','b-mi','b-pr','b-da','b-ex','b-no'].forEach(k=>$('#'+k).value='');$('#b-un').checked=false;$('#b-inv').value='';bd.showModal()};
 $('#b-ok').onclick=async()=>{const MV=$('#b-inv').value,L=fixLoc($('#b-l').value),C=$('#b-c').value.trim(),A=tl($('#b-t').value),Rm=tl($('#b-r').value).map(norm),RD=$('#b-rd').value,RW=$('#b-rw').value.trim(),UN=$('#b-un').checked;let n=0;
- for(const i of items){if(!S.has(i.id))continue;if(MV)i.inv=MV;if(L)i.location=L;if(C)i.category=C;if(UN){i.ret='';i.retWhy=''}else{if(RD)i.ret=RD;if(RW)i.retWhy=RW}if(A.length||Rm.length)i.tags=[...new Set([...tl(i.tags),...A])].filter(t=>!Rm.includes(norm(t))).join(', ');await putI(touch(i));n++}
+ const BF=[['brand','b-br'],['model','b-mo'],['talla','b-ta'],['clase','b-cl'],['unit','b-uni'],['min','b-mi'],['price','b-pr'],['date','b-da'],['exp','b-ex'],['notes','b-no']].map(([k,id])=>[k,$('#'+id).value.trim()]).filter(x=>x[1]!=='');
+ for(const i of items){if(!S.has(i.id))continue;for(const [k,v] of BF)i[k]=v;if(MV)i.inv=MV;if(L)i.location=L;if(C)i.category=C;if(UN){i.ret='';i.retWhy=''}else{if(RD)i.ret=RD;if(RW)i.retWhy=RW}if(A.length||Rm.length)i.tags=[...new Set([...tl(i.tags),...A])].filter(t=>!Rm.includes(norm(t))).join(', ');await putI(touch(i));n++}
  bd.close();S.clear();selOn=false;render();flash(n+' artículos actualizados')};
 $('#b-d').onclick=async()=>{if(!confirm('¿Borrar '+S.size+' artículos?'))return;for(const i of items)if(S.has(i.id)){i.del=1;i.ph=0;for(const k of pks(i))await delP(k);await putI(touch(i))}bd.close();S.clear();selOn=false;render()};
 function cmOpen(){const c={};items.filter(i=>!i.del&&invOf(i)==inv&&i.category).forEach(i=>c[i.category]=(c[i.category]||0)+1);XC.forEach(x=>c[x]=c[x]||0);const ls=Object.keys(c).sort((a,b)=>a.localeCompare(b,'es'));
@@ -496,7 +498,7 @@ $('#cd-add').onclick=async()=>{const v=$('#cd-n').value.trim();if(!v)return;if(!
 $('#cd-a').onclick=async()=>{const map={};document.querySelectorAll('#cd-t input').forEach(x=>{const v=x.value.trim();if(v!=x.dataset.o)map[x.dataset.o]=v});let n=0;
  for(const i of items){if(i.del||invOf(i)!=inv||!i.category||!(i.category in map))continue;i.category=map[i.category];await putI(touch(i));n++}
  XC=[...new Set(XC.map(x=>x in map?map[x]:x).filter(Boolean))];await putP('_cats',JSON.stringify(XC));cmOpen();render();flash(n+' artículos recategorizados')};
-(async()=>{db=await open();items=await tx('items','readonly',s=>s.getAll())||[];try{navigator.storage.persist()}catch(e){}try{XC=JSON.parse(await getP('_cats')||'[]')}catch(e){}try{const u=JSON.parse(await getP('_ui')||'{}');if(u.view)view=u.view;if(u.srt)srt={...srt,...u.srt}}catch(e){}if(innerWidth>=700)$('#flt').classList.add('on');render();completePend()})();addEventListener('online',completePend);
+(async()=>{db=await open();items=await tx('items','readonly',s=>s.getAll())||[];items.forEach(i=>{i.ph=pks(i).length?1:0});try{navigator.storage.persist()}catch(e){}try{XC=JSON.parse(await getP('_cats')||'[]')}catch(e){}try{const u=JSON.parse(await getP('_ui')||'{}');if(u.view)view=u.view;if(u.srt)srt={...srt,...u.srt}}catch(e){}if(innerWidth>=700)$('#flt').classList.add('on');render();completePend()})();addEventListener('online',completePend);
 if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 /* ===== SINCRONIZACIÓN EN LA NUBE (Supabase) ===== */
 const SB_URL='https://gxcmqormoqatckfosciy.supabase.co';
