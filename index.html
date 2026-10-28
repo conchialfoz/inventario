@@ -609,12 +609,14 @@ const gKey=g=>g.map(x=>String(x.id)).sort().join(',');
 const noDupSet=()=>{try{return new Set(JSON.parse(localStorage.getItem('inv_no_dup')||'[]'))}catch(e){return new Set()}};
 const HC=new Map();
 async function prepDup(){for(const i of items){if(i.del)continue;const k=pk0(i);if(!k||HC.has(k))continue;const b=await getP(k);if(!b){HC.set(k,'');continue}HC.set(k,[...new Uint8Array(await crypto.subtle.digest('SHA-256',await b.arrayBuffer()))].map(x=>x.toString(16).padStart(2,'0')).join(''))}}
+const ATR=[['negro','negra','negros','negras'],['blanco','blanca','blancos','blancas'],['rojo','roja','rojos','rojas'],['azul','azules'],['marron','marrones'],['verde','verdes'],['gris','grises'],['beige'],['amarillo','amarilla'],['rosa','rosas'],['naranja','naranjas'],['morado','morada'],['grande','grandes'],['mediana','mediano'],['pequeno','pequena','mini'],['dorado','dorada'],['plata','plateado']];
+const ATC=(a,b)=>{const g=s=>new Set(ATR.map((x,k)=>x.some(w=>s.has(w))?k:-1).filter(k=>k>=0));const A=g(a),B=g(b);return !!(A.size&&B.size&&![...A].some(k=>B.has(k)))};
 const TKN=i=>new Set(norm(i.name).split(' ').filter(t=>t.length>2));
 const dupGroups=()=>{const act=items.filter(i=>!i.del&&!isRet(i)),n=act.length,par=act.map((_,i)=>i),f=x=>par[x]===x?x:(par[x]=f(par[x]));
   const tk=act.map(TKN),hs=act.map(i=>HC.get(pk0(i))||'');
   for(let a=0;a<n;a++)for(let b=a+1;b<n;b++){const A=act[a],B=act[b];if(A.exp&&B.exp&&A.exp!==B.exp)continue;
     const inter=[...tk[a]].filter(t=>tk[b].has(t)).length,uni=new Set([...tk[a],...tk[b]]).size||1;
-    if((hs[a]&&hs[a]===hs[b])||(inter>0&&inter/uni>=0.6))par[f(a)]=f(b)}
+    if((hs[a]&&hs[a]===hs[b])||(inter>0&&inter/uni>=0.75&&!ATC(tk[a],tk[b])))par[f(a)]=f(b)}
   const g=new Map();act.forEach((it,i)=>{const r=f(i);if(!g.has(r))g.set(r,[]);g.get(r).push(it)});
   const ex=noDupSet();return [...g.values()].filter(x=>x.length>1).map(g=>g.sort((x,y)=>(pks(y).length?1:0)-(pks(x).length?1:0)||(x.cre||0)-(y.cre||0))).filter(g=>!ex.has(gKey(g)))};
 const DF=[['name','Nombre'],['location','Ubicación'],['brand','Marca'],['model','Modelo'],['talla','Talla'],['clase','Clase'],['category','Categoría'],['code','Código de barras'],['qty','Cantidad'],['min','Cant. mínima'],['unit','Unidad'],['price','Precio'],['date','Fecha compra'],['exp','Caducidad'],['ret','Fecha retirada'],['retWhy','Motivo retirada'],['tags','Etiquetas'],['notes','Notas']];
