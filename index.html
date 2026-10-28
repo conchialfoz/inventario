@@ -364,7 +364,7 @@ function qParse(raw){let s=raw.trim();const r=/^(\d{4})\s*(?:-|–|a|al|hasta)\s
  const m=/^([a-záéíóú]{3,})\.?\s+(?:de\s+)?(\d{4})$/i.exec(s);if(m){const k=MES.indexOf(norm(m[1]).slice(0,3));if(k>=0)s=p2(k+1)+' '+m[2]}
  return{q:norm(s)}}
 const SW=new Set(['el','la','los','las','de','del','en','y','o','con','un','una','al','para','por']);
-const hay=i=>norm([i.name,i.brand,i.model,i.category,i.location,i.tags,i.notes,i.code,i.retWhy,i.date,dfmt(i.date),i.exp,dfmt(i.exp),i.ret,dfmt(i.ret)].join(' '));
+const hay=i=>norm([i.name,i.brand,i.model,i.category,i.price,i.tags,i.notes,i.code,i.retWhy,i.date,dfmt(i.date),i.exp,dfmt(i.exp),i.ret,dfmt(i.ret)].join(' '));
 function render(){const pan=inv!='casa';
  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.i==inv));updBar();
  document.querySelectorAll('.pan').forEach(e=>e.hidden=!pan);
