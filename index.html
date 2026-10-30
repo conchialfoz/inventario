@@ -85,7 +85,7 @@ dialog input,dialog select,dialog textarea{font-size:16px;min-height:48px}
 .lr select,.lr input{min-height:44px}
 #sibsel button{min-height:56px}
 /* ===== Filtros cómodos en móvil ===== */
-@media(max-width:699px){
+@media(max-width:699px),(pointer:coarse){
 #flt.on{top:0;bottom:0;left:0;right:0;height:100vh;height:100dvh;max-height:none;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(14px + env(safe-area-inset-top)) 16px 0;gap:10px;border-radius:0;background:var(--bg);z-index:70}
 #flt>div{flex:1 1 100%;min-width:0}
 #flt label{font-size:14px;margin:8px 0 4px;color:var(--fg)}
