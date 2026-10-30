@@ -84,6 +84,15 @@ dialog input,dialog select,dialog textarea{font-size:16px;min-height:48px}
 .gr{grid-template-columns:1fr 1fr}
 .lr select,.lr input{min-height:44px}
 #sibsel button{min-height:56px}
+/* ===== Filtros cómodos en móvil ===== */
+@media(max-width:699px){
+#flt.on{max-height:80vh;padding:14px 16px calc(14px + env(safe-area-inset-bottom));gap:10px;border-radius:22px 22px 0 0;background:var(--c)}
+#flt>div{flex:1 1 100%;min-width:0}
+#flt label{font-size:14px;margin:8px 0 4px;color:var(--fg)}
+#flt input:not([type=checkbox]),#flt select{min-height:52px;font-size:17px;border-radius:14px;padding:10px 14px}
+#flt input[type=checkbox]{width:26px;height:26px;min-height:auto}
+#flt button,#fx{min-height:52px!important;font-size:16px;border-radius:14px;width:100%}
+}
 </style></head><body>
 <header><div class="row" style="margin:0"><h1>✨ Mi Inventario</h1><button class="tab" data-i="casa">🏠 Casa</button></div>
 <div class="row" style="flex-wrap:wrap"><input id="q" type="search" placeholder="Buscar: cadena oro medalla…" style="flex:1 1 320px;min-width:200px"><div id="acts" style="display:contents"><button id="vw">☰ Lista</button><button id="sc">📷 Escanear</button><button id="sl">☑ Seleccionar</button><button id="mm">⋯ Más</button></div><button id="ft">🔎 Filtros<span id="fn"></span></button><button id="fc">✖ Limpiar todo</button><button class="p" id="new">＋ Nuevo</button></div><div class="row" id="masr" hidden><button id="lm">📍 Ubicaciones</button><button id="cm">🏷 Categorías</button><button id="imp">⬇ Importar</button><button id="sy">☁ Sincronizar</button><button id="syr" title="Borra en la nube lo que no esté en este dispositivo">⬆ Sustituir la nube</button><button id="dupb">🔍 Duplicados</button><button id="expb">⬆ Exportar</button></div></header>
