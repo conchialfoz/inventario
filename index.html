@@ -592,6 +592,9 @@ async function leerTodo(tabla,orden,filtro){
 }
 const withT=(p,ms=30000)=>Promise.race([p,new Promise((_,j)=>setTimeout(()=>j(new Error('la conexión tarda demasiado; inténtalo de nuevo')),ms))]);
 let syncing=false;
+const POOL=4,TMO=60000;
+async function pool(lista,n,fn){let i=0;const w=async()=>{while(i<lista.length){const t=lista[i++];try{await fn(t)}catch(e){console.error(e)}}};await Promise.all(Array.from({length:Math.min(n,lista.length)},w))}
+const tmo=(p,ms=TMO)=>Promise.race([p,new Promise((_,j)=>setTimeout(()=>j(new Error('tiempo agotado')),ms))]);
 async function sincronizar(auto){
   if(!SB)return auto?null:flash('No se pudo cargar el servicio de sincronización');
   if(!navigator.onLine)return auto?null:flash('Sin conexión: se sincronizará al volver internet');
@@ -600,7 +603,7 @@ async function sincronizar(auto){
   if(syncing)return;syncing=true;
   try{
     const uid=session.user.id,t0=Date.now();
-    st('Sincronizando…');
+    st('Sincronizando artículos…');
     /* 1. Artículos: bajar los que la nube tiene más nuevos */
     const rItems=await withT(leerTodo('items','id'));
     const remotos=new Map((rItems||[]).map(r=>[String(r.id),Number(r.updated_ms)||0]));
@@ -612,58 +615,73 @@ async function sincronizar(auto){
       if(k>=0)items[k]=nuevo;else items.push(nuevo);
       await putI(nuevo);cambios.add(String(r.id));
     }
-    /* 2. Fotos: lista completa de la nube, bajando las que falten aquí (también las que fallaron antes) */
+    /* 2. Fotos: lista de la nube y descarga de las que faltan aquí */
+    st('Comprobando fotos…');
     const rFotos=await withT(leerTodo('item_photos','photo_key'));
     const fotosDe=new Map();
     for(const f of (rFotos||[])){const a=fotosDe.get(f.item_id)||[];a.push(f);fotosDe.set(f.item_id,a)}
     for(const a of fotosDe.values())a.sort((x,y)=>x.position-y.position);
     const existentes=new Set((rFotos||[]).map(f=>f.photo_key));
     const pendientes=new Set();
+    const bajar=[];
     for(const it of items){
       if(it.del)continue;
       const id=String(it.id),rem=fotosDe.get(id)||[];
       if(!rem.length)continue;
-      if(cambios.has(id)){it.phs=rem.map(f=>f.photo_key)}
+      const antes=JSON.stringify([it.phs||[],it.ph||0]);
+      if(cambios.has(id))it.phs=rem.map(f=>f.photo_key);
       else if((it.upd||0)<=(remotos.get(id)||0)){
         const L=pks(it),extra=rem.map(f=>f.photo_key).filter(k=>!L.includes(k));
         if(extra.length)it.phs=[...L,...extra];
       }
       it.ph=pks(it).length?1:0;
-      for(const f of rem){
-        if(await getP(f.photo_key))continue;
-        const {data,error}=await SB.storage.from(BUCKET).download(f.storage_path);
-        if(!error&&data)await putP(f.photo_key,data);else pendientes.add(f.photo_key);
-      }
-      await putI(it);
+      if(JSON.stringify([it.phs||[],it.ph||0])!==antes)await putI(it);
+      for(const f of rem)if(!(await getP(f.photo_key)))bajar.push(f);
     }
+    let hechas=0;
+    await pool(bajar,POOL,async f=>{
+      const r=await tmo(SB.storage.from(BUCKET).download(f.storage_path)).catch(()=>null);
+      if(r&&!r.error&&r.data)await putP(f.photo_key,r.data);else pendientes.add(f.photo_key);
+      st(`Bajando fotos ${++hechas}/${bajar.length}`);
+    });
     /* 3. Artículos: subir los que han cambiado aquí */
+    st('Subiendo artículos…');
     const locales=items.filter(i=>{const ru=remotos.get(String(i.id));return(ru===undefined||(i.upd||0)>ru)&&!cambios.has(String(i.id))});
     for(let k=0;k<locales.length;k+=200){
       const {error}=await SB.from('items').upsert(locales.slice(k,k+200).map(i=>toRemote(i,uid)),{onConflict:'user_id,id'});
       if(error)throw error;
     }
-    /* 4. Fotos: subir las que falten en la nube (de cualquier artículo) y quitar solo las retiradas aquí */
-    const subidas=new Set(existentes);
+    /* 4. Fotos: subir solo las que faltan en la nube, en paralelo */
+    const planes=[];
     for(const it of items){
       if(it.del)continue;
       const id=String(it.id),L=pks(it),rem=fotosDe.get(id)||[],remK=rem.map(f=>f.photo_key);
       if(JSON.stringify(remK)===JSON.stringify(L))continue;
+      const subir=[];
+      for(const k of L){if(!existentes.has(k)){const blob=await getP(k);if(blob)subir.push({k,blob,path:`${uid}/${hexKey(k)}.jpg`})}}
+      planes.push({id,L,rem,remK,subir});
+    }
+    const tareas=planes.flatMap(p=>p.subir.map(x=>({...x})));
+    let up=0;
+    if(tareas.length)st(`Subiendo fotos 0/${tareas.length}`);
+    await pool(tareas,POOL,async t=>{
+      const r=await tmo(SB.storage.from(BUCKET).upload(t.path,t.blob,{upsert:true,contentType:'image/jpeg'})).catch(e=>({error:e}));
+      if(r.error)pendientes.add(t.k);else existentes.add(t.k);
+      st(`Subiendo fotos ${++up}/${tareas.length}`);
+    });
+    /* 5. Filas de fotos en la nube: añadir las subidas y quitar solo las retiradas aquí */
+    st('Guardando lista de fotos…');
+    for(const p of planes){
       const filas=[];
-      for(let p=0;p<L.length;p++){
-        const k=L[p],yaRemoto=remK.includes(k),path=`${uid}/${hexKey(k)}.jpg`;
-        const blob=await getP(k);
-        if(blob&&!subidas.has(k)){
-          const {error}=await SB.storage.from(BUCKET).upload(path,blob,{upsert:true,contentType:'image/jpeg'});
-          if(error){pendientes.add(k);continue}
-          subidas.add(k);
-        }
-        if(!subidas.has(k)&&!yaRemoto)continue;
-        const sp=yaRemoto?rem.find(f=>f.photo_key===k).storage_path:path;
-        filas.push({user_id:uid,photo_key:k,item_id:id,position:p,storage_path:sp,created_ms:Date.now()});
-      }
-      const obsoletas=remK.filter(k=>!L.includes(k));
-      if(obsoletas.length){const {error}=await SB.from('item_photos').delete().eq('item_id',id).in('photo_key',obsoletas);if(error)throw error}
-      if(filas.length){const {error}=await SB.from('item_photos').upsert(filas,{onConflict:'user_id,photo_key'});if(error)throw error}
+      p.L.forEach((k,pos)=>{
+        const yaRemoto=p.remK.includes(k);
+        if(!existentes.has(k)&&!yaRemoto)return;
+        const sp=yaRemoto?p.rem.find(f=>f.photo_key===k).storage_path:`${uid}/${hexKey(k)}.jpg`;
+        filas.push({user_id:uid,photo_key:k,item_id:p.id,position:pos,storage_path:sp,created_ms:Date.now()});
+      });
+      const obsoletas=p.remK.filter(k=>!p.L.includes(k));
+      if(obsoletas.length){const {error}=await SB.from('item_photos').delete().eq('item_id',p.id).in('photo_key',obsoletas);if(error)throw error}
+      for(let k=0;k<filas.length;k+=200){const {error}=await SB.from('item_photos').upsert(filas.slice(k,k+200),{onConflict:'user_id,photo_key'});if(error)throw error}
     }
     localStorage.setItem('inv_last_sync',String(t0));
     render();
