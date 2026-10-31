@@ -724,7 +724,7 @@ async function subirYReemplazarNube(){
   for(let k=0;k<locales.length;k+=200){const {error}=await tmo(SB.from('items').upsert(locales.slice(k,k+200).map(i=>toRemote(i,uid)),{onConflict:'user_id,id'}));if(error)throw error}
   for(let k=0;k<sobran.length;k+=100){const ids=sobran.slice(k,k+100);
    const {error:e1}=await SB.from('item_photos').delete().in('item_id',ids);if(e1)throw e1;
-   const {error:e2}=await SB.from('items').delete().in('id',ids);if(e2)throw e2}
+   const {error:e2}=await tmo(SB.from('items').update({deleted:true,updated_ms:Date.now()}).eq('user_id',uid).in('id',ids));if(e2)throw e2}
   syncing=false;
   await sincronizar(false);
   flash('Nube sustituida: '+locales.length+' artículos'+(sobran.length?' · '+sobran.length+' quitados de la nube':''));
