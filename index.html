@@ -99,8 +99,10 @@ dialog input,dialog select,dialog textarea{font-size:16px;min-height:48px}
 <div class="row" style="flex-wrap:wrap"><input id="q" type="search" placeholder="Buscar: cadena oro medalla…" style="flex:1 1 320px;min-width:200px"><div id="acts" style="display:contents"><button id="vw">☰ Lista</button><button id="sc">📷 Escanear</button><button id="sl">☑ Seleccionar</button><button id="mm">⋯ Más</button></div><button id="ft">🔎 Filtros<span id="fn"></span></button><button id="fc">✖ Limpiar todo</button><button class="p" id="new">＋ Nuevo</button></div><div class="row" id="masr" hidden><button id="lm">📍 Ubicaciones</button><button id="cm">🏷 Categorías</button><button id="imp">⬇ Importar</button><button id="sy">☁ Sincronizar</button><button id="syr" title="Borra en la nube lo que no esté en este dispositivo">⬆ Sustituir la nube</button><button id="dupb">🔍 Duplicados</button><button id="expb">⬆ Exportar</button></div></header>
 <div id="tools"><div class="fp" id="flt">
 
-<div><label>📍 Ubicación (escribe para buscar)</label><input id="loc" type="search" list="locs" autocomplete="off" placeholder="Todas"></div>
-<div><label>🏷 Categoría (escribe para buscar)</label><input id="cat" type="search" list="cats" autocomplete="off" placeholder="Todas"></div>
+<div><label>📍 Ubicación</label><select id="loc"></select></div>
+<div><label>🏷 Categoría</label><select id="cat"></select></div>
+<div><label>Marca</label><select id="brf"></select></div>
+<div><label>🔖 Etiqueta</label><select id="tgf"></select></div>
 <div><label>📷 Foto</label><select id="pf"><option value="">Todos</option><option value="con">Con foto</option><option value="sin">Sin foto</option></select></div>
 <div><label>Estado</label><select id="es"><option value="">Activos</option><option value="ret">Retirados</option><option value="all" selected>Todos</option></select></div>
 <div><label>↕ Ordenar por</label><select id="so"></select><button id="sdir" style="margin-top:4px;width:100%"></button></div>
@@ -163,7 +165,7 @@ const FIELDS=['name','location','brand','model','talla','clase','category','code
 const HEAD={id:'ID',talla:'Talla',clase:'Clase',name:'Nombre',location:'Ubicación',brand:'Marca',model:'Modelo',category:'Categoría',code:'Código de barras',qty:'Cantidad',min:'Cant. mínima',unit:'Unidad',price:'Precio',date:'Fecha compra',exp:'Caducidad',ret:'Fecha retirada',retWhy:'Motivo retirada',tags:'Etiquetas',notes:'Notas'};
 const EMO={casa:'📦',des:'<svg viewBox="0 0 64 64" style="width:2.6em;height:2.6em;vertical-align:-0.5em"><path d="M4 12h8l6 28h30l5-20H16" fill="none" stroke="#534AB7" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/><rect x="18" y="20" width="10" height="10" rx="2" fill="#EF9F27"/><rect x="30" y="20" width="10" height="10" rx="2" fill="#E24B4A"/><rect x="42" y="20" width="8" height="10" rx="2" fill="#97C459"/><circle cx="22" cy="48" r="5" fill="#534AB7"/><circle cx="44" cy="48" r="5" fill="#534AB7"/></svg>',bot:'<svg viewBox="0 0 24 24" style="width:1.8em;height:1.8em;vertical-align:-0.35em"><rect x="1" y="1" width="22" height="22" rx="5" fill="#fff" stroke="#e53935" stroke-width="2"/><path d="M9.5 4h5v5.5H20v5h-5.5V20h-5v-5.5H4v-5h5.5z" fill="#e53935"/></svg>'};const SEP='>',paths=l=>{const p=(l||'').split(SEP),o=[];if(!l)return o;for(let k=1;k<=p.length;k++)o.push(p.slice(0,k).join(SEP));return o},inLoc=(a,b)=>a==b||(a||'').startsWith(b+SEP),tl=s=>(s||'').split(',').map(x=>x.trim()).filter(Boolean),fixLoc=v=>(v||'').split(/\s*[>>]\s*/).filter(Boolean).join(SEP),remap=(l,m)=>{const k=Object.keys(m).filter(k=>l==k||l.startsWith(k+SEP)).sort((a,b)=>b.length-a.length)[0];return k===undefined?l:fixLoc(m[k]+l.slice(k.length))};let XC=[],selOn=false;const S=new Set();let items=[],db,cur=null,inv='casa',view='grid',shown=[];
 const flash=m=>{st(m);$('#st').dataset.k=1;setTimeout(()=>{delete $('#st').dataset.k;render()},6000)};
-const normF=(f,v)=>{v=String(v||'').trim();return(f=='location'||f=='category')?v.replace(/\s*[>>]\s*/g,'>'):v},uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6),nextId=()=>String(items.reduce((m,x)=>Math.max(m,parseInt(x.id,10)||0),0)+1).padStart(4,'0'),st=m=>$('#st').textContent=m;
+const normF=(f,v)=>{v=String(v||'').trim();return(f=='location'||f=='category')?v.replace(/\s*[>>]\s*/g,'>'):v},uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6),nextId=()=>uid(),st=m=>$('#st').textContent=m;
 const h=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const open=()=>new Promise((r,j)=>{const q=indexedDB.open('inv',1);q.onupgradeneeded=()=>{q.result.createObjectStore('items',{keyPath:'id'});q.result.createObjectStore('photos')};q.onsuccess=()=>r(q.result);q.onerror=j});
 const tx=(s,m,f)=>new Promise((r,j)=>{const t=db.transaction(s,m),o=f(t.objectStore(s));t.oncomplete=()=>r(o&&o.result);t.onerror=j});
@@ -430,23 +432,27 @@ function render(){const pan=inv!='casa';
   cats=[...new Set([...mine.map(i=>i.category).filter(Boolean),...XC])].sort((a,b)=>a.localeCompare(b,'es'));
  const d1=locs.map(x=>`<option value="${h(x)}">`).join(''),d2=cats.map(x=>`<option value="${h(x)}">`).join('');
  if(DL.l!==d1){DL.l=d1;$('#locs').innerHTML=d1}if(DL.c!==d2){DL.c=d2;$('#cats').innerHTML=d2}
- $('#cat').parentElement.hidden=!cats.length;
- const rp=$('#rp').checked,pf=$('#pf').value,es=$('#es').value,df=$('#df').value,lq=norm($('#loc').value),cq=norm($('#cat').value),
-  lo=parseD($('#d1').value,0),hi=parseD($('#d2').value,1),P=qParse($('#q').value),
-  le=lq&&locs.find(x=>norm(x)==lq),ce=cq&&cats.find(x=>norm(x)==cq);
+ fillSel('#loc',locs.map(p=>[p,'\u00a0\u00a0'.repeat(p.split(SEP).length-1)+p.split(SEP).pop()]),'— Sin ubicación —');
+ fillSel('#cat',cats.map(c=>[c,c]),'— Sin categoría —');
+ fillSel('#brf',[...new Set(mine.map(i=>(i.brand||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')).map(b=>[b,b]),'— Sin marca —');
+ fillSel('#tgf',[...new Set(mine.flatMap(i=>tl(i.tags)))].sort((a,b)=>a.localeCompare(b,'es')).map(t=>[t,t]),'— Sin etiquetas —');
+ const rp=$('#rp').checked,pf=$('#pf').value,es=$('#es').value,df=$('#df').value,lv=$('#loc').value,cv=$('#cat').value,bv=$('#brf').value,tv=$('#tgf').value,
+  lo=parseD($('#d1').value,0),hi=parseD($('#d2').value,1),P=qParse($('#q').value);
  $('#d1').classList.toggle('bad',!!$('#d1').value.trim()&&!lo);$('#d2').classList.toggle('bad',!!$('#d2').value.trim()&&!hi);
- const nf=[lq,cq,pf,es!='all'?es:'',lo||hi,rp].filter(Boolean).length;$('#fn').textContent=nf?` (${nf})`:'';
+ const nf=[lv,cv,bv,tv,pf,es!='all'?es:'',lo||hi,rp].filter(Boolean).length;$('#fn').textContent=nf?` (${nf})`:'';
  EXPG={};mine.forEach(x=>{if(!x.exp||x.del)return;const k=norm(x.name)+'|'+norm(x.code||'');if(!EXPG[k]||x.exp<EXPG[k])EXPG[k]=x.exp});
  PKG={};mine.forEach(x=>{if(!x.del&&pks(x).length&&!PKG[gkey(x)])PKG[gkey(x)]=pks(x)[0]});
  shown=mine.filter(i=>{const r=isRet(i);if(es==''&&r)return false;if(es=='ret'&&!r)return false;if(QS=='exp30'&&!(exp30(i)&&!(i.qty!==''&&+i.qty===0)))return false;if(QS=='expired'&&!(i.exp&&days(i)<0&&!(i.qty!==''&&+i.qty===0)))return false;if(QS=='loc'&&(i.location||isRet(i)))return false;if(QS=='zero'&&!(i.qty!==''&&+i.qty===0))return false;
-  if(lq&&(le?!inLoc(i.location,le):!norm(i.location).includes(lq)))return false;
-  if(cq&&(ce?i.category!=ce:!norm(i.category).includes(cq)))return false;
+  if(lv=='__none'?i.location:(lv&&!inLoc(i.location,lv)))return false;
+  if(cv=='__none'?i.category:(cv&&i.category!=cv))return false;
+  if(bv=='__none'?(i.brand||'').trim():(bv&&norm(i.brand)!=norm(bv)))return false;
+  if(tv=='__none'?tl(i.tags).length:(tv&&!tl(i.tags).map(norm).includes(norm(tv))))return false;
   if(pf=='sin'&&phOf(i))return false;if(pf=='con'&&!phOf(i))return false;if(rp&&!rep(i))return false;
   if(lo||hi){const v=DG[df](i);if(!v||(lo&&v<lo)||(hi&&v>hi))return false}
   if(P.range){const v=i.date||'';if(!v||v<P.range[0]||v>P.range[1])return false}else if(P.q&&!P.q.split(' ').filter(t=>t&&!SW.has(t)).every(t=>hay(i).includes(t)))return false;
   return true}).sort(sorter());
- const gk=x=>norm(x.name)+'|'+norm(x.code||'');const grp={};mine.forEach(x=>{const k=gk(x);(grp[k]=grp[k]||[]).push(x)});const repG={};shown.forEach(x=>{const k=gk(x);if(!repG[k]||(!phOf(repG[k])&&phOf(x)))repG[k]=x});if(!lq)shown=shown.filter(x=>repG[gk(x)]===x);shown.forEach(x=>{x._sib=grp[gk(x)].filter(o=>o.id!=x.id).map(o=>o.location||'Sin ubicación')});
- renderSum(mine,act);const g=$('#grid'),ls=$('#list');g.hidden=view!='grid';ls.hidden=view!='list';g.innerHTML='';ls.innerHTML='';$('#vw').textContent=view=='grid'?'☰ Lista':'▦ Tarjetas';
+ const gk=x=>norm(x.name)+'|'+norm(x.code||'');const grp={};mine.forEach(x=>{const k=gk(x);(grp[k]=grp[k]||[]).push(x)});const repG={};shown.forEach(x=>{const k=gk(x);if(!repG[k]||(!phOf(repG[k])&&phOf(x)))repG[k]=x});if(!lv&&!cv&&!bv&&!tv)shown=shown.filter(x=>repG[gk(x)]===x);shown.forEach(x=>{x._sib=grp[gk(x)].filter(o=>o.id!=x.id).map(o=>o.location||'Sin ubicación')});
+ renderSum(mine,act);locCount();const g=$('#grid'),ls=$('#list');g.hidden=view!='grid';ls.hidden=view!='list';g.innerHTML='';ls.innerHTML='';$('#vw').textContent=view=='grid'?'☰ Lista':'▦ Tarjetas';
  const cb=i=>`<input type="checkbox" class="ckb"${S.has(i.id)?' checked':''}>`;
  if(view=='grid')for(const i of shown){const c=document.createElement('div'),meta=[dfmt(i.date),money(i.price)].filter(Boolean).join(' · ');c.className='card'+(S.has(i.id)?' sel':'')+(isRet(i)?' rt':'');
   c.innerHTML=(selOn?`<span class="ck">${cb(i)}</span>`:'')+`<div class="im">${EMO[invOf(i)]}</div><div class="t"><b>${h(i.name)}</b>${invOf(i)=='bot'&&i.notes?`<div class="m">${h(i.notes)}</div>`:''}${i.pend?'<span class="b o">Sin completar</span>':''}${i.qty!==''&&+i.qty===0?'<span class="b r">Agotado</span>':''}${rep(i)?'<span class="b o">A reponer</span>':''}${chip(i.location)}${(i._sib||[]).map(x=>chip(x)).join('')}${pan?badge(i)+' '+qtyT(i):''}${isRet(i)?'<span class="b x">Retirado</span>':''}${meta?`<div class="m">${h(meta)}</div>`:''}</div>`;
@@ -465,7 +471,7 @@ function render(){const pan=inv!='casa';
   const ca=t.querySelector('#ckall');if(ca){ca.checked=!!shown.length&&shown.every(i=>S.has(i.id));ca.onclick=e=>{e.stopPropagation();shown.forEach(i=>ca.checked?S.add(i.id):S.delete(i.id));render()}}
   ls.append(t)}
  if(!$('#st').dataset.k){const f=mine.filter(i=>phOf(i)).length,nr=mine.length-act.length,tot=shown.filter(i=>!isRet(i)).reduce((s,i)=>s+(+i.price||0),0),rr=pan?act.filter(rep).length:0,e=pan?act.filter(i=>i.exp&&days(i)<0).length:0,s=pan?act.filter(i=>i.exp&&days(i)>=0&&days(i)<=30).length:0;
-  st(lq?`${shown.length} de ${mine.length} artículos · ${f} con foto`+(nr?` · ${nr} retirados`:'')+(tot?` · 💶 ${money(tot)}`:'')+(pan?` · 🛒 ${rr} a reponer · ⚠ ${e} caducados · ${s} caducan en 30 días`:''):'')}}
+  st(lv?`${shown.length} de ${mine.length} artículos · ${f} con foto`+(nr?` · ${nr} retirados`:'')+(tot?` · 💶 ${money(tot)}`:'')+(pan?` · 🛒 ${rr} a reponer · ⚠ ${e} caducados · ${s} caducan en 30 días`:''):'')}}
 let PL=[],PG=[],QS=null;
 const exp30=i=>{if(!i.exp)return false;const d=days(i);return d!=null&&d>=0&&d<=30};
 function renderSum(mine,act){const pan=inv!='casa',sin=act.filter(i=>!phOf(i)).length;
@@ -474,6 +480,9 @@ function renderSum(mine,act){const pan=inv!='casa',sin=act.filter(i=>!phOf(i)).l
  $('#rs').innerHTML=B('tot',act.length,'activos','var(--text-primary)')+B('ret',mine.filter(isRet).length,'retirados','var(--text-primary)')+B('con',act.filter(i=>phOf(i)).length,'con foto','var(--text-primary)')+B('sin',sin,'sin foto','var(--text-primary)')+B('loc',act.filter(i=>!i.location).length,'sin ubicación','var(--text-primary)')+B('exp',act.filter(i=>exp30(i)&&!(i.qty!==''&&+i.qty===0)).length,'próximos a caducar','#854F0B')+B('expired',act.filter(i=>i.exp&&days(i)<0&&!(i.qty!==''&&+i.qty===0)).length,'caducados','#A32D2D')+B('rep',act.filter(rep).length,'a reponer','#854F0B')+B('zero',act.filter(i=>i.qty!==''&&+i.qty===0).length,'agotados','#A32D2D');
  $('#rs').querySelectorAll('button').forEach(b=>b.onclick=()=>{const q=b.dataset.q;QS=null;$('#pf').value='';$('#rp').checked=false;
   if(q=='tot'){$('#fc').click();return}if(q=='sin')$('#pf').value='sin';if(q=='con')$('#pf').value='con';if(q=='zero')QS='zero';if(q=='expired')QS='expired';if(q=='ret')$('#es').value='ret';if(q=='exp')QS='exp30';if(q=='loc')QS='loc';if(q=='rep')$('#rp').checked=true;render()})}
+function fillSel(sel,pairs,none){const el=$(sel),sig=JSON.stringify(pairs)+none;if(el._sig===sig)return;el._sig=sig;const v=el.value;
+ el.innerHTML=`<option value="">Todas</option><option value="__none">${h(none)}</option>`+pairs.map(([v2,l])=>`<option value="${h(v2)}">${h(l)}</option>`).join('');
+ el.value=[...el.options].some(o=>o.value==v)?v:''}
 let multiQty=null;
 async function edit(i){cur=i||{id:null,qty:1};if(!cur.id)cur.id=nextId();for(const f of FIELDS)$('#'+f).value=cur[f]??'';$('#out').checked=cur.out===undefined?!!(cur.ret||cur.retWhy):!!cur.out;$('#ph').value='';$('#del').hidden=!(i&&i.id);$('#dup').hidden=!(i&&i.id);$('#aim').textContent='';
  $('#notesL').textContent=(cur.inv||inv)=='bot'?'Descripción (para qué es)':'Notas';
@@ -506,7 +515,7 @@ $('#f').onsubmit=async(e)=>{for(const f of FIELDS)cur[f]=normF(f,$('#'+f).value)
 $('#rethoy').onclick=()=>{$('#ret').value=msISO(Date.now());$('#retWhy').focus()};
 $('#cx').onclick=()=>$('#dlg').close();
 $('#del').onclick=async()=>{if(confirm('¿Borrar este artículo?')){cur.del=1;cur.ph=0;for(const k of pks(cur))await delP(k);await putI(touch(cur));$('#dlg').close();render()}};
-document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{inv=t.dataset.i;$('#loc').value='';$('#cat').value='';render()});
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{inv=t.dataset.i;$('#loc').value='';$('#cat').value='';$('#brf').value='';$('#tgf').value='';render()});
 $('#mm').onclick=()=>{$('#masr').hidden=!$('#masr').hidden};
 $('#vw').onclick=()=>{view=view=='grid'?'list':'grid';saveUI();render()};
 $('#new').onclick=()=>edit();$('#imp').onclick=()=>$('#fi').click();$('#expb').onclick=()=>xd.showModal();
@@ -515,13 +524,13 @@ $('#x2').onclick=()=>{xd.close();const c=cols(shown);dl(xlsx(shown,c,invName()),
 $('#x3').onclick=()=>{xd.close();exportPdf()};
 $('#x4').onclick=()=>{xd.close();dl(new Blob([toCsv(shown,cols(shown))],{type:'text/csv'}),`${invName().toLowerCase()}-${stampF()}.csv`)};
 $('#fi').onchange=e=>{importFiles([...e.target.files]);e.target.value=''};
-['q','loc','cat','rp','pf','es','df','d1','d2'].forEach(k=>$('#'+k).oninput=render);
+['q','loc','cat','brf','tgf','rp','pf','es','df','d1','d2'].forEach(k=>$('#'+k).oninput=render);
 $('#pf').oninput=()=>{if($('#pf').value=='sin'&&view!='list'){view='list';saveUI()}render()};
 $('#so').oninput=()=>{srt[inv].k=$('#so').value;srt[inv].d=0;saveUI();render()};
 $('#sdir').onclick=()=>{srt[inv].d^=1;saveUI();render()};
 $('#ft').onclick=()=>{const f=$('#flt');f.classList.toggle('on');if(f.classList.contains('on'))0};
 $('#flt').insertAdjacentHTML('beforeend','<button id="fx" type="button" style="width:100%;min-height:44px">▲ Ocultar filtros</button>');$('#fx').onclick=()=>{$('#flt').classList.remove('on');$('#tools').scrollIntoView({block:'start'})};
-$('#fc').onclick=()=>{QS=null;['q','loc','cat','d1','d2'].forEach(k=>$('#'+k).value='');$('#pf').value='';$('#es').value='all';$('#rp').checked=false;render()};
+$('#fc').onclick=()=>{QS=null;['q','loc','cat','brf','tgf','d1','d2'].forEach(k=>$('#'+k).value='');$('#pf').value='';$('#es').value='all';$('#rp').checked=false;render()};
 $('#lm').onclick=lmOpen;$('#ld-t').oninput=e=>e.target.classList.toggle('ch2',e.target.value!=e.target.dataset.o);
 $('#ld-s').onclick=()=>{const ins=[...document.querySelectorAll('#ld-t input')],ls=ins.map(x=>x.dataset.o),N=ls.map(l=>' '+norm(l));
  ins.forEach((x,i)=>{let b=null;ls.forEach((m,j)=>{const nm=' '+norm(m);if(i!=j&&N[i].endsWith(nm)&&N[i].length>nm.length&&(!b||norm(m).length<norm(b).length))b=m});x.value=b||ls[i];x.classList.toggle('ch2',x.value!=ls[i])})};
@@ -590,10 +599,11 @@ async function sincronizar(auto){
   if(!session){if(!auto)await SB.auth.signInWithOAuth({provider:'github',options:{redirectTo:location.href.split('#')[0]}});return}
   if(syncing)return;syncing=true;
   try{
-    const uid=session.user.id,t0=Date.now(),last=+(localStorage.getItem('inv_last_sync')||0);
+    const uid=session.user.id,t0=Date.now();
     st('Sincronizando…');
-    /* 1. Bajar cambios del servidor */
+    /* 1. Artículos: bajar los que la nube tiene más nuevos */
     const rItems=await withT(leerTodo('items','id'));
+    const remotos=new Map((rItems||[]).map(r=>[String(r.id),Number(r.updated_ms)||0]));
     const cambios=new Set();
     for(const r of (rItems||[])){
       const k=items.findIndex(x=>String(x.id)===String(r.id));
@@ -602,57 +612,63 @@ async function sincronizar(auto){
       if(k>=0)items[k]=nuevo;else items.push(nuevo);
       await putI(nuevo);cambios.add(String(r.id));
     }
-    if(cambios.size){
-      const ids=[...cambios],rFotos=[];
-      for(let k=0;k<ids.length;k+=100)rFotos.push(...await leerTodo('item_photos','photo_key',q=>q.in('item_id',ids.slice(k,k+100))));
-      for(const it of items.filter(x=>cambios.has(String(x.id)))){
-        const fs=(rFotos||[]).filter(f=>f.item_id===String(it.id)).sort((a,b)=>a.position-b.position);
-        it.phs=fs.map(f=>f.photo_key);it.ph=it.phs.length?1:0;
-        for(const f of fs){
-          if(await getP(f.photo_key))continue;
-          const {data,error}=await SB.storage.from(BUCKET).download(f.storage_path);
-          if(!error&&data)await putP(f.photo_key,data);
-        }
-        await putI(it);
+    /* 2. Fotos: lista completa de la nube, bajando las que falten aquí (también las que fallaron antes) */
+    const rFotos=await withT(leerTodo('item_photos','photo_key'));
+    const fotosDe=new Map();
+    for(const f of (rFotos||[])){const a=fotosDe.get(f.item_id)||[];a.push(f);fotosDe.set(f.item_id,a)}
+    for(const a of fotosDe.values())a.sort((x,y)=>x.position-y.position);
+    const existentes=new Set((rFotos||[]).map(f=>f.photo_key));
+    const pendientes=new Set();
+    for(const it of items){
+      if(it.del)continue;
+      const id=String(it.id),rem=fotosDe.get(id)||[];
+      if(!rem.length)continue;
+      if(cambios.has(id)){it.phs=rem.map(f=>f.photo_key)}
+      else if((it.upd||0)<=(remotos.get(id)||0)){
+        const L=pks(it),extra=rem.map(f=>f.photo_key).filter(k=>!L.includes(k));
+        if(extra.length)it.phs=[...L,...extra];
       }
+      it.ph=pks(it).length?1:0;
+      for(const f of rem){
+        if(await getP(f.photo_key))continue;
+        const {data,error}=await SB.storage.from(BUCKET).download(f.storage_path);
+        if(!error&&data)await putP(f.photo_key,data);else pendientes.add(f.photo_key);
+      }
+      await putI(it);
     }
-    const remotos=new Map((rItems||[]).map(r=>[String(r.id),Number(r.updated_ms)||0]));
-    /* 2. Subir mis cambios */
+    /* 3. Artículos: subir los que han cambiado aquí */
     const locales=items.filter(i=>{const ru=remotos.get(String(i.id));return(ru===undefined||(i.upd||0)>ru)&&!cambios.has(String(i.id))});
     for(let k=0;k<locales.length;k+=200){
       const {error}=await SB.from('items').upsert(locales.slice(k,k+200).map(i=>toRemote(i,uid)),{onConflict:'user_id,id'});
       if(error)throw error;
     }
-    if(locales.length){
-      const todasFotos=await leerTodo('item_photos','photo_key');
-      const existentes=new Set((todasFotos||[]).map(f=>f.photo_key));
-      for(const it of locales){
-        const lista=it.phs||[];
-        const remotaLista=(todasFotos||[]).filter(f=>f.item_id===String(it.id)).sort((a,b)=>a.position-b.position).map(f=>f.photo_key);
-        if(JSON.stringify(remotaLista)===JSON.stringify(lista))continue;
-        const filas=[];
-        for(let p=0;p<lista.length;p++){
-          const blob=await getP(lista[p]);
-          if(!blob)continue;
-          const path=`${uid}/${hexKey(lista[p])}.jpg`;
-          if(!existentes.has(lista[p])){
-            const {error}=await SB.storage.from(BUCKET).upload(path,blob,{upsert:true,contentType:'image/jpeg'});
-            if(error)throw error;
-            existentes.add(lista[p]);
-          }
-          filas.push({user_id:uid,photo_key:lista[p],item_id:String(it.id),position:p,storage_path:path,created_ms:Date.now()});
+    /* 4. Fotos: subir las que falten en la nube (de cualquier artículo) y quitar solo las retiradas aquí */
+    const subidas=new Set(existentes);
+    for(const it of items){
+      if(it.del)continue;
+      const id=String(it.id),L=pks(it),rem=fotosDe.get(id)||[],remK=rem.map(f=>f.photo_key);
+      if(JSON.stringify(remK)===JSON.stringify(L))continue;
+      const filas=[];
+      for(let p=0;p<L.length;p++){
+        const k=L[p],yaRemoto=remK.includes(k),path=`${uid}/${hexKey(k)}.jpg`;
+        const blob=await getP(k);
+        if(blob&&!subidas.has(k)){
+          const {error}=await SB.storage.from(BUCKET).upload(path,blob,{upsert:true,contentType:'image/jpeg'});
+          if(error){pendientes.add(k);continue}
+          subidas.add(k);
         }
-        const {error:eDel}=await SB.from('item_photos').delete().eq('item_id',String(it.id));
-        if(eDel)throw eDel;
-        if(filas.length){
-          const {error:eIns}=await SB.from('item_photos').upsert(filas,{onConflict:'user_id,photo_key'});
-          if(eIns)throw eIns;
-        }
+        if(!subidas.has(k)&&!yaRemoto)continue;
+        const sp=yaRemoto?rem.find(f=>f.photo_key===k).storage_path:path;
+        filas.push({user_id:uid,photo_key:k,item_id:id,position:p,storage_path:sp,created_ms:Date.now()});
       }
+      const obsoletas=remK.filter(k=>!L.includes(k));
+      if(obsoletas.length){const {error}=await SB.from('item_photos').delete().eq('item_id',id).in('photo_key',obsoletas);if(error)throw error}
+      if(filas.length){const {error}=await SB.from('item_photos').upsert(filas,{onConflict:'user_id,photo_key'});if(error)throw error}
     }
     localStorage.setItem('inv_last_sync',String(t0));
     render();
-    if(!auto)flash('Sincronizado: '+items.filter(i=>!i.del).length+' artículos');
+    const n=items.filter(i=>!i.del).length,con=items.filter(i=>!i.del&&pks(i).length).length;
+    if(!auto)flash('Sincronizado: '+n+' artículos, '+con+' con foto'+(pendientes.size?' · '+pendientes.size+' fotos pendientes (vuelve a sincronizar)':''));
   }catch(err){
     console.error(err);
     flash('Error al sincronizar: '+(err.message||err));
@@ -717,7 +733,7 @@ bn.id='locbn';bn.hidden=true;bn.style.cssText='font-size:18px;font-weight:700;pa
 $('#list').insertAdjacentElement('beforebegin',bn);
 const lp=document.createElement('div');
 lp.id='locpick';lp.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;max-height:160px;overflow:auto';
-$('#loc').parentElement.appendChild(lp);
+
 function locCount(){const L=($('#loc').value||'').trim(),lab=$('#loc').parentElement.querySelector('label');
   $('#st').classList.toggle('big',!!L);
   if(!L){if(lab)lab.textContent='📍 Ubicación (escribe para buscar)';bn.hidden=true;return}
@@ -729,8 +745,6 @@ function locPick(){const q=norm($('#loc').value);
   const all=[...new Set(items.filter(i=>!i.del).flatMap(i=>paths(i.location)))].sort((a,b)=>a.localeCompare(b,'es'));
   lp.innerHTML=all.filter(x=>q?norm(x).includes(q):x.split(SEP).length<=1).slice(0,200).map(x=>`<button type="button" class="sugb" data-l="${h(x)}">${h(x)}</button>`).join('');
 }
-lp.onclick=e=>{const b=e.target.closest('button');if(!b)return;$('#loc').value=b.dataset.l;locCount();locPick();render()};
-$('#loc').addEventListener('focus',locPick);
-$('#loc').addEventListener('input',()=>{locCount();locPick()});
-$('#loc').addEventListener('change',locCount);
+
+$('#loc').addEventListener('change',()=>{locCount();render()});
 </script></body></html>
